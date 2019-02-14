@@ -1,6 +1,7 @@
 package io.webApp.springbootstarter.register;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,6 +17,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import io.webApp.springbootstarter.notes.Note;
+import io.webApp.springbootstarter.notes.NoteDao;
+
 
 @RestController
 public class registerController {
@@ -26,19 +33,30 @@ public class registerController {
 	private String email;
 	private String password;
 	
-	private TableCreation tableCreation;
-		
-	@Autowired
-	private registerService rService;
+	public register userDetails;
 	
 	@Autowired
 	private UserRepository userRepository;
 	
+	@Autowired
+	NoteDao noteDao;
+	
+	
+	/*Method to verify the Junit test suite*/
+	@RequestMapping(method=RequestMethod.GET, value="/test", produces = "application/json")
+	public register fetchuser() {
+		
+		register user = new register();
+		user.setEmail("paavan@gmail.com");
+		user.setPassword("Pass@123");
+		return user;
+        
+	}
 	
 	@RequestMapping(method=RequestMethod.POST, value="/user/register")
 
 	public String addUser(@RequestBody register userDetails) {
-		if(userDetails.getEmail().isEmpty() || userDetails.getPassword().isEmpty()) {
+		if(userDetails.getEmail() == null || userDetails.getPassword() == null || userDetails.getEmail().isEmpty() || userDetails.getPassword().isEmpty()) {
 			return "{\"RESPONSE\" : \"Credentials should not be empty\"}";
 		}
 
@@ -117,7 +135,145 @@ public class registerController {
 	@RequestMapping(method=RequestMethod.GET, value="/", produces = "application/json")
 	public String ValidUser(@RequestHeader(value="Authorization",defaultValue="noAuth") String auth) 
 	{
+		String status = checkAuth(auth);
+		if(status.equals("Success"))
+		{
+			String time =  "{\"RESPONSE: Token Authenticated \" : " + currentTime() + "\"}\"";
+			return time;
+		}
+		else
+			return status;
+	}
+
+	public String currentTime() {
+		currentTime Ctime = new currentTime(); 
+		return Ctime.getCurrentTime();
+	}
+	
+	
+	@RequestMapping(method=RequestMethod.POST, value="/note")
+	public ResponseEntity<Note> createNote(@RequestBody Note nt, @RequestHeader(value="Authorization",defaultValue="noAuth") String auth)
+	{
+		try {
+		String status = checkAuth(auth);
+		if(status.equals("Success"))
+		{
+			if(nt.getTitle().isEmpty() || nt.getContent().isEmpty())
+			{
+				throw new Exception();
+			}
+			nt.setEmailID(email);
+			//nt.emailID=email;
+			Note note = noteDao.Save(nt);
+			return ResponseEntity.status(HttpStatus.CREATED).body(note);
+		}
+		else
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}catch (Exception ex)
+		{
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+		}
+	}
+
+	@RequestMapping(method=RequestMethod.GET,value="/note")
+	public ResponseEntity<List<Note>> getAllNote(@RequestHeader(value="Authorization",defaultValue="noAuth") String auth) 
+	{
+		String status = checkAuth(auth);
+		if(status.equals("Success"))
+		{
+			return ResponseEntity.status(HttpStatus.OK).body(noteDao.findByemailID(email));
+		}
+		else
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+	}
+	
+	@RequestMapping(method=RequestMethod.GET, value="/note/{id}")
+	public ResponseEntity<Note> getNote(@PathVariable(value="id") String noteId, @RequestHeader(value="Authorization",defaultValue="noAuth") String auth) 
+	{
+		try {
+		String status = checkAuth(auth);
 		
+		if(status.equals("Success"))
+		{
+			Note nt = noteDao.findNoteUnderEmailList(noteId, email);
+			if(nt == null)
+			{
+				throw new NoSuchElementException();
+			}
+			
+			return ResponseEntity.status(HttpStatus.OK).body(nt);
+		}
+		else
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}catch (NoSuchElementException ex) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+	}
+	
+	@RequestMapping(method=RequestMethod.PUT, value="/note/{id}")
+	public ResponseEntity<Note> updateNote(@PathVariable(value="id") String noteId,@RequestBody Note nt , @RequestHeader(value="Authorization",defaultValue="noAuth") String auth)
+	{
+		try {
+		String status = checkAuth(auth);
+		if(status.equals("Success"))
+		{
+			Note originalNote = noteDao.findNoteUnderEmailList(noteId, email);
+			if(originalNote == null)
+			{
+				throw new NoSuchElementException();
+			}
+			if(nt.getTitle().isEmpty() && nt.getContent().isEmpty())
+			{
+				throw new Exception();
+			}
+			
+			if (nt.getTitle() != null)
+				originalNote.setTitle(nt.getTitle());
+			
+			if (nt.getContent() != null)
+				originalNote.setContent(nt.getContent());
+			
+			originalNote.setEmailID(email);
+			//originalNote.emailID=email;
+
+			Note updateNote = noteDao.Save(originalNote);
+			
+			if(updateNote == null)
+			{
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			}
+			
+			return ResponseEntity.status(HttpStatus.OK).body(updateNote);
+		}
+		else
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+	}catch (NoSuchElementException ex) {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+	}catch (Exception ex) {
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+	}
+	}
+	
+	@RequestMapping(method=RequestMethod.DELETE, value="/note/{id}")
+	public ResponseEntity<Note> deleteNote(@PathVariable(value="id") String noteId, @RequestHeader(value="Authorization",defaultValue="noAuth") String auth)
+	{
+		try {
+		String status = checkAuth(auth);
+		if(status.equals("Success"))
+		{
+			if (noteDao.DeleteNoteUnderEmailList(noteId, email))
+				return ResponseEntity.status(HttpStatus.OK).build();
+			else
+				throw new NoSuchElementException();
+		}
+		else
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+	}catch (NoSuchElementException ex) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+	}
+	}
+	
+	public String checkAuth(String auth) {
 		String[] encodedValue = auth.split(" ");
 		System.out.println("Auth Value:" + auth);
 		String authValue = encodedValue[1];
@@ -144,23 +300,13 @@ public class registerController {
 		if(email.isEmpty() || password.isEmpty()) {
 			return "{\"RESPONSE\" : \"Enter valid Credentials\"}";
 		}
-		register userDetails = new register(email,password);
+		userDetails = new register(email,password);
 
 		if(!checkVaildEmailAddr(email) || ! checkAlreadyPresent(userDetails) || ! checkPassword(userDetails)) 
 		{
 			return "{\"RESPONSE\" : \"Invalid credentials\"}";
 		}
-		else 
-		{
-			String time =  "{\"RESPONSE: Token Authenticated \" : " + currentTime() + "\"}\"";
-			return time;
-					//JSONObject.quote(currentTime());
-		}
+		return "Success";
 	}
-	
-	public String currentTime() {
-		currentTime Ctime = new currentTime(); 
-		return Ctime.getCurrentTime();
-	}	
 
 }
