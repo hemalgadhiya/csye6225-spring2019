@@ -236,10 +236,33 @@
         }
     },
     "Outputs": {
-        "MyStacksRegion" : { "Value" : { "Ref" : "AWS::Region" } },
-        "VPCId":{ "Value" : { "Ref" : "VPC" } },
-        "InternetGatewaySId" : { "Value" : { "Ref" : "InternetGateway" } },
-        "PublicRoutetable" : { "Value" : { "Ref" : "PublicRouteTable" } },
-
+        "websubnet":{
+            "Value":{"Ref":"publicsubnet1"},
+            "Export":{
+            "Name":"csye6225-cloud-Networking-web-subnet"
+            }
+        },
+        "dbsubnet1Id":{
+            "Value":{"Ref":"publicsubnet2"},
+            "Export":{
+            "Name":"csye6225-cloud-Networking-db-subnet1Id"
+            }
+        },
+        "dbsubnet2Id":{
+            "Value":{"Ref":"publicsubnet3"},
+            "Export":{
+            "Name":"csye6225-cloud-Networking-db-subnet2Id"
+            }
+        },
+        "vpcid":{
+            "Value":{"Ref":"VPC"},
+            "Export":{
+            "Name":"csye6225-cloud-Networking-VPC-Id"
+            }
+          }
     }
 }
+
+        
+    
+
