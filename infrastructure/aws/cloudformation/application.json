@@ -7,6 +7,9 @@
        "AmiId":{
          "Type":"String"
        },
+       "NameTag":{
+           "Type":"String"
+       }
     },
     "Resources": {
         "ec2instance": {
@@ -18,6 +21,7 @@
                     "Ref": "keyname"
                 },
                 "SubnetId" :{"Fn::ImportValue":"csye6225-cloud-Networking-web-subnet"},
+                "IamInstanceProfile":"CodeDeployEC2ServiceRoleProfile",
                 "SecurityGroupIds": [
                     {
                         "Ref": "webappsecuritygroup"
@@ -32,7 +36,59 @@
                             "VolumeType": "gp2"
                         }
                     }
-                ]
+                ],
+                "Tags" : [ {"Key" : "Name", "Value" : {"Ref" : "NameTag"}} ],
+                "UserData":{
+                    "Fn::Base64":{
+                        "Fn::Join":[
+                            "",
+                            [
+                                "#!/bin/bash -xe \n",
+                                "sudo yum update -y \n",
+                                "sudo yum install java-1.8.0-openjdk -y \n",
+                                "sudo yum install java-1.8.0-openjdk-devel -y \n",
+                                "sudo yum install ruby -y \n",
+                                "sudo yum install wget -y \n",
+                                "cd /home/centos \n",
+                                "wget https://aws-codedeploy-us-east-1.s3.amazonaws.com/latest/install \n",
+                                "chmod +x ./install \n",
+                                "sudo ./install auto \n",
+                                "sudo service codedeploy-agent start \n",
+                                "sudo yum install tomcat -y \n",
+                                "sudo chmod 777 /var/lib/tomcat \n",
+                                "sudo echo DBCreationType=update >> /home/centos/.bash_profile \n",
+                                "sudo echo export DBCreationType >> /home/centos/.bash_profile \n",
+                                "sudo echo username=csye6225master >> /home/centos/.bash_profile \n",
+                                "sudo echo export username >> /home/centos/.bash_profile \n",
+                                "sudo echo password=csye6225password >> /home/centos/.bash_profile \n",
+                                "sudo echo export password >> /home/centos/.bash_profile \n",
+                                "sudo echo profiletype=dev >> /home/centos/.bash_profile \n",
+                                "sudo echo export profiletype >> /home/centos/.bash_profile \n",
+                                {
+                                    "Fn::Join":[
+                                        "",
+                                        [
+                                            "echo awsRDS=jdbc:mysql://",
+                                            {
+                                                "Fn::GetAtt":[
+                                                    "rdsinstance","Endpoint.Address"
+                                                ]
+                                            },
+                                            ":3306/csye6225 >> /home/centos/.bash_profile \n"
+                                        ]
+                                    ]
+                                },
+                                "sudo echo export awsRDS >> /home/centos/.bash_profile \n",
+                                "sudo echo bucketName=csye6225-spring2019-gadhiyah.me.csye6225.com >> /home/centos/.bash_profile \n",
+                                "sudo echo export bucketName >> /home/centos/.bash_profile \n",
+                                "sudo echo endpointUrl=https://s3.us-east-1.amazonaws.com/ >> /home/centos/.bash_profile \n",
+                                "sudo echo export endpointUrl >> /home/centos/.bash_profile \n",
+                                "source /home/centos/.bash_profile \n",
+                                "sudo service tomcat restart \n"
+                            ]
+                        ]
+                    }
+                }
             }
         },
         "dbsubnetgroup":{
@@ -127,6 +183,5 @@
                 "StorageType" : "gp2"
             }
         }
-
     }
 }

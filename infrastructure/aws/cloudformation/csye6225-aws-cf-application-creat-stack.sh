@@ -25,6 +25,8 @@ aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE||CREATE_IN_
 echo "Enter the stack you want to create"
 read Stack_Name
 
+# Dhanisha, Here I'm ASSUMING that $1 is the STACK NAME
+# $vpc would be the actual name of the VPC created.
 # Retrieving VPC Name
 
 
@@ -150,7 +152,7 @@ file_dir_var="file://$dir_var/application.json"
 aws cloudformation create-stack \
 	--stack-name $Stack_Name  \
 	--template-body $file_dir_var \
-	--parameters ParameterKey="keyname",ParameterValue=$KEY_CHOSEN ParameterKey="AmiId",ParameterValue=$amiId \
+	--parameters ParameterKey="keyname",ParameterValue=$KEY_CHOSEN ParameterKey="AmiId",ParameterValue=$amiId ParameterKey="NameTag",ParameterValue="ec2" \
 	--disable-rollback
 
 # aws cloudformation create-stack \
