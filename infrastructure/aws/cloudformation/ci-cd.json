@@ -1,0 +1,214 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters":{
+        "NameTag":{
+            "Type":"String"
+        }
+    },
+    "Resources":{
+        "CodeDeployEC2S3":{
+            "Type":"AWS::IAM::Policy",
+            "Properties":{
+                "PolicyName" : "CodeDeploy-EC2-S3",
+		"Roles":[{"Ref":"CodeDeployEC2ServiceRole"}],
+                "PolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Statement":[{
+                        "Action":[
+                            "s3:Get*",
+                            "s3:List*"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : "arn:aws:s3:::code-deploy.csye6225-spring2019-gadhiyah.me/*"
+                    }]
+                }
+            }
+        },
+        "CircleCIUploadToS3":{
+            "Type":"AWS::IAM::Policy",
+            "Properties":{
+                "PolicyName" : "CircleCI-Upload-To-S3",
+                "Users":["circleci"],
+                "PolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Statement":[{
+                        "Action":[
+                            "s3:PutObject"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : "arn:aws:s3:::code-deploy.csye6225-spring2019-gadhiyah.me/*"
+                    }]
+                }
+            }
+            
+        },
+        "CirlceCICodeDeploy":{
+            "Type":"AWS::IAM::Policy",
+            "Properties":{
+                "PolicyName" : "CirlceCI-Code-Deploy",
+                "Users":["circleci"],
+                "PolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Statement":[{
+                        "Action":[
+                            "codedeploy:RegisterApplicationRevision",
+                            "codedeploy:GetApplicationRevision"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : "arn:aws:codedeploy:us-east-1:392230586247:application:csye6225-webapp"
+                    },
+                    {
+                        "Action":[
+                            "codedeploy:CreateDeployment",
+                            "codedeploy:GetDeployment"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : "*"
+                    },
+                    {
+                        "Action":[
+                            "codedeploy:GetDeploymentConfig"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : [
+                            "arn:aws:codedeploy:us-east-1:392230586247:deploymentconfig:CodeDeployDefault.OneAtATime",
+                            "arn:aws:codedeploy:us-east-1:392230586247:deploymentconfig:CodeDeployDefault.HalfAtATime",
+                            "arn:aws:codedeploy:us-east-1:392230586247:deploymentconfig:CodeDeployDefault.AllAtOnce"
+                        ]
+                    }
+                    
+                    ]
+                }
+            }
+            
+        },
+        "circleciec2ami":{
+            "Type":"AWS::IAM::Policy",
+            "Properties":{
+                "PolicyName" : "circleci-ec2-ami",
+                "Users":["circleci"],
+                "PolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Statement":[{
+                        "Effect": "Allow",
+                        "Action" : [
+                            "ec2:AttachVolume",
+                            "ec2:AuthorizeSecurityGroupIngress",
+                            "ec2:CopyImage",
+                            "ec2:CreateImage",
+                            "ec2:CreateKeypair",
+                            "ec2:CreateSecurityGroup",
+                            "ec2:CreateSnapshot",
+                            "ec2:CreateTags",
+                            "ec2:CreateVolume",
+                            "ec2:DeleteKeyPair",
+                            "ec2:DeleteSecurityGroup",
+                            "ec2:DeleteSnapshot",
+                            "ec2:DeleteVolume",
+                            "ec2:DeregisterImage",
+                            "ec2:DescribeImageAttribute",
+                            "ec2:DescribeImages",
+                            "ec2:DescribeInstances",
+                            "ec2:DescribeRegions",
+                            "ec2:DescribeSecurityGroups",
+                            "ec2:DescribeSnapshots",
+                            "ec2:DescribeSubnets",
+                            "ec2:DescribeTags",
+                            "ec2:DescribeVolumes",
+                            "ec2:DetachVolume",
+                            "ec2:GetPasswordData",
+                            "ec2:ModifyImageAttribute",
+                            "ec2:ModifyInstanceAttribute",
+                            "ec2:ModifySnapshotAttribute",
+                            "ec2:RegisterImage",
+                            "ec2:RunInstances",
+                            "ec2:StopInstances",
+                            "ec2:TerminateInstances"
+                        ],
+                        "Resource" : "*"
+                    }]
+                }
+            }
+        },
+        "s3Bucketcodedeploy" : {
+            "Type" : "AWS::S3::Bucket",
+            "Properties" : {
+                "BucketName" :"code-deploy.csye6225-spring2019-gadhiyah.me"
+            }
+        },
+        
+        "CodeDeployEC2ServiceRole":{
+            "Type":"AWS::IAM::Role",
+            "Properties":{
+                "RoleName":"CodeDeployEC2ServiceRole",
+                "AssumeRolePolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Statement": [ {
+                    "Effect": "Allow",
+                    "Principal": {
+                    "Service": [ "ec2.amazonaws.com" ]
+                  },
+                    "Action": [ "sts:AssumeRole" ]
+                    } ]
+                }
+            }
+        },
+        "ec2instanceprofile":{
+            "Type":"AWS::IAM::InstanceProfile",
+            "Properties":{
+                "InstanceProfileName": "CodeDeployEC2ServiceRoleProfile",
+                "Roles":[{"Ref":"CodeDeployEC2ServiceRole"}]
+            }
+        },
+        "CodeDeployServiceRole":{
+            "Type":"AWS::IAM::Role",
+            "Properties":{
+                "RoleName":"CodeDeployServiceRole",
+                "AssumeRolePolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Statement": [ {
+                    "Effect": "Allow",
+                    "Principal": {
+                    "Service": [ "codedeploy.amazonaws.com" ]
+                  },
+                    "Action": [ "sts:AssumeRole" ]
+                    } ]
+                },
+                "ManagedPolicyArns":[
+                    "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+                    ]
+            }
+        },
+        "codedeployapplication":{
+            "Type":"AWS::CodeDeploy::Application",
+            "Properties":{
+                "ApplicationName":"csye6225-webapp"
+            }
+        },
+        "Deploymentgroup":{
+            "Type":"AWS::CodeDeploy::DeploymentGroup",
+            "Properties":{
+                "ApplicationName":{"Ref":"codedeployapplication"},
+                "DeploymentGroupName":"csye6225-webapp-deployment",
+                "DeploymentConfigName": "CodeDeployDefault.AllAtOnce",
+                "AutoRollbackConfiguration":{
+                    "Enabled":"True",
+                    "Events":["DEPLOYMENT_FAILURE"]
+                },
+                "ServiceRoleArn":{
+                    "Fn::GetAtt":["CodeDeployServiceRole","Arn"]
+                },
+                "DeploymentStyle":{
+                    "DeploymentType":"IN_PLACE",
+                    "DeploymentOption": "WITHOUT_TRAFFIC_CONTROL"
+                },
+                "Ec2TagFilters":[{
+                    "Key" : "Name",
+                    "Type":"KEY_AND_VALUE",
+                    "Value":{"Ref":"NameTag"}
+                }]
+            }
+        }
+
+    }
+}
