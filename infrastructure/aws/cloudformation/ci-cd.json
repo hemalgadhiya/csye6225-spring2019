@@ -3,6 +3,12 @@
     "Parameters":{
         "NameTag":{
             "Type":"String"
+        },
+        "AccTag":{
+            "Type":"String"
+        },
+        "circleciusername":{
+            "Type":"String"
         }
     },
     "Resources":{
@@ -10,7 +16,7 @@
             "Type":"AWS::IAM::Policy",
             "Properties":{
                 "PolicyName" : "CodeDeploy-EC2-S3",
-		"Roles":[{"Ref":"CodeDeployEC2ServiceRole"}],
+		        "Roles":[{"Ref":"CodeDeployEC2ServiceRole"}],
                 "PolicyDocument":{
                     "Version" : "2012-10-17",
                     "Statement":[{
@@ -19,8 +25,23 @@
                             "s3:List*"
                         ],
                         "Effect":"Allow",
-                        "Resource" : "arn:aws:s3:::code-deploy.csye6225-spring2019-gadhiyah.me/*"
-                    }]
+                        "Resource" : [{
+                            "Fn::Sub":"arn:aws:s3:::code-deploy.csye6225-spring2019-gadhiyah.me/*"
+                        }]
+                    },
+                    {
+                        "Action":[
+                            "s3:Get*",
+                            "s3:List*",
+                            "s3:Delete*",
+                            "s3:Put*"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : [{
+                            "Fn::Sub":"arn:aws:s3:::csye6225-spring2019-gadhiyah.me.csye6225.com/*"
+                        }]
+                    }
+                    ]
                 }
             }
         },
@@ -28,7 +49,7 @@
             "Type":"AWS::IAM::Policy",
             "Properties":{
                 "PolicyName" : "CircleCI-Upload-To-S3",
-                "Users":["circleci"],
+                "Users":[{"Ref":"circleciusername"}],
                 "PolicyDocument":{
                     "Version" : "2012-10-17",
                     "Statement":[{
@@ -36,17 +57,20 @@
                             "s3:PutObject"
                         ],
                         "Effect":"Allow",
-                        "Resource" : "arn:aws:s3:::code-deploy.csye6225-spring2019-gadhiyah.me/*"
+                        "Resource" : [{
+                            "Fn::Sub":"arn:aws:s3:::code-deploy.csye6225-spring2019-gadhiyah.me/*"
+                        }]
                     }]
                 }
             }
-            
+
         },
+        
         "CirlceCICodeDeploy":{
             "Type":"AWS::IAM::Policy",
             "Properties":{
                 "PolicyName" : "CirlceCI-Code-Deploy",
-                "Users":["circleci"],
+                "Users":[{"Ref":"circleciusername"}],
                 "PolicyDocument":{
                     "Version" : "2012-10-17",
                     "Statement":[{
@@ -55,7 +79,7 @@
                             "codedeploy:GetApplicationRevision"
                         ],
                         "Effect":"Allow",
-                        "Resource" : "arn:aws:codedeploy:us-east-1:392230586247:application:csye6225-webapp"
+                        "Resource" : [{"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":application:csye6225-webapp"]]} ]
                     },
                     {
                         "Action":[
@@ -71,16 +95,16 @@
                         ],
                         "Effect":"Allow",
                         "Resource" : [
-                            "arn:aws:codedeploy:us-east-1:392230586247:deploymentconfig:CodeDeployDefault.OneAtATime",
-                            "arn:aws:codedeploy:us-east-1:392230586247:deploymentconfig:CodeDeployDefault.HalfAtATime",
-                            "arn:aws:codedeploy:us-east-1:392230586247:deploymentconfig:CodeDeployDefault.AllAtOnce"
+                            {"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":deploymentconfig:CodeDeployDefault.OneAtATime"]]},
+                            {"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":deploymentconfig:CodeDeployDefault.HalfAtATime"]]},
+                            {"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":deploymentconfig:CodeDeployDefault.AllAtOnce"]]}
                         ]
                     }
-                    
+
                     ]
                 }
             }
-            
+
         },
         "circleciec2ami":{
             "Type":"AWS::IAM::Policy",
@@ -136,7 +160,7 @@
                 "BucketName" :"code-deploy.csye6225-spring2019-gadhiyah.me"
             }
         },
-        
+
         "CodeDeployEC2ServiceRole":{
             "Type":"AWS::IAM::Role",
             "Properties":{

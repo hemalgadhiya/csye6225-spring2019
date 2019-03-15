@@ -38,10 +38,11 @@ public class DevFileStorageService implements FileStorageService {
 	private String endpointUrl;
 	@Value("${bucketName}")
 	private String bucketName;
-	@Value("${accessKey}")
-	private String accessKey;
-	@Value("${secretKey}")
-	private String secretKey;
+	/*
+	 * @Value("${accessKey}") private String accessKey;
+	 * 
+	 * @Value("${secretKey}") private String secretKey;
+	 */
 
 	@PostConstruct
 	private void initializeAmazon() {
