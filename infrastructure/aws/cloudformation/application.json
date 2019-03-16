@@ -1,27 +1,34 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Parameters": {
-       "keyname":{
-           "Type":"String"
-       },
-       "AmiId":{
-         "Type":"String"
-       },
-       "NameTag":{
-           "Type":"String"
-       }
+        "keyname": {
+            "Type": "String"
+        },
+        "AmiId": {
+            "Type": "String"
+        },
+        "NameTag": {
+            "Type": "String"
+        },
+        "webappbucket": {
+            "Type": "String"
+        }
     },
     "Resources": {
         "ec2instance": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
-                "ImageId": {"Ref":"AmiId"},
+                "ImageId": {
+                    "Ref": "AmiId"
+                },
                 "InstanceType": "t2.micro",
                 "KeyName": {
                     "Ref": "keyname"
                 },
-                "SubnetId" :{"Fn::ImportValue":"csye6225-cloud-Networking-web-subnet"},
-                "IamInstanceProfile":"CodeDeployEC2ServiceRoleProfile",
+                "SubnetId": {
+                    "Fn::ImportValue": "csye6225-cloud-Networking-web-subnet"
+                },
+                "IamInstanceProfile": "CodeDeployEC2ServiceRoleProfile",
                 "SecurityGroupIds": [
                     {
                         "Ref": "webappsecuritygroup"
@@ -37,10 +44,17 @@
                         }
                     }
                 ],
-                "Tags" : [ {"Key" : "Name", "Value" : {"Ref" : "NameTag"}} ],
-                "UserData":{
-                    "Fn::Base64":{
-                        "Fn::Join":[
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "NameTag"
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
                             "",
                             [
                                 "#!/bin/bash -xe \n",
@@ -63,27 +77,39 @@
                                 "sudo echo profiletype=dev >> /etc/profile.d/envvariable.sh \n",
                                 "sudo echo export profiletype >> /etc/profile.d/envvariable.sh \n",
                                 {
-                                    "Fn::Join":[
+                                    "Fn::Join": [
                                         "",
                                         [
                                             "echo awsRDS=jdbc:mysql://",
                                             {
-                                                "Fn::GetAtt":[
-                                                    "rdsinstance","Endpoint.Address"
+                                                "Fn::GetAtt": [
+                                                    "rdsinstance",
+                                                    "Endpoint.Address"
                                                 ]
                                             },
                                             ":3306/csye6225 >> /etc/profile.d/envvariable.sh \n"
                                         ]
                                     ]
                                 },
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "sudo echo bucketName=",
+                                            {
+                                                "Ref": "webappbucket"
+                                            },
+                                            ">> /etc/profile.d/envvariable.sh \n"
+                                        ]
+                                    ]
+                                },
                                 "sudo echo export awsRDS >> /etc/profile.d/envvariable.sh \n",
-                                "sudo echo bucketName=csye6225-spring2019-gadhiyah.me.csye6225.com >> /etc/profile.d/envvariable.sh \n",
                                 "sudo echo export bucketName >> /etc/profile.d/envvariable.sh \n",
                                 "sudo echo endpointUrl=https://s3.us-east-1.amazonaws.com/ >> /etc/profile.d/envvariable.sh \n",
                                 "sudo echo export endpointUrl >> /etc/profile.d/envvariable.sh \n",
                                 "source /etc/profile.d/envvariable.sh \n",
-				"mkdir /home/centos/webapp \n",
-				"chown centos:centos -R /home/centos/webapp \n",
+                                "mkdir /home/centos/webapp \n",
+                                "chown centos:centos -R /home/centos/webapp \n",
                                 "iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination :8080"
                             ]
                         ]
@@ -91,19 +117,27 @@
                 }
             }
         },
-        "dbsubnetgroup":{
-            "Type":"AWS::RDS::DBSubnetGroup",
-            "Properties":{
-                "DBSubnetGroupDescription" : "Subnet description of db subnets",
-                "SubnetIds":[{"Fn::ImportValue":"csye6225-cloud-Networking-db-subnet1Id"},
-                  {"Fn::ImportValue":"csye6225-cloud-Networking-db-subnet2Id"}]
+        "dbsubnetgroup": {
+            "Type": "AWS::RDS::DBSubnetGroup",
+            "Properties": {
+                "DBSubnetGroupDescription": "Subnet description of db subnets",
+                "SubnetIds": [
+                    {
+                        "Fn::ImportValue": "csye6225-cloud-Networking-db-subnet1Id"
+                    },
+                    {
+                        "Fn::ImportValue": "csye6225-cloud-Networking-db-subnet2Id"
+                    }
+                ]
             }
         },
         "webappsecuritygroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
-                "VpcId":{"Fn::ImportValue":"csye6225-cloud-Networking-VPC-Id"},
-                "GroupDescription" : "Security group for web server",
+                "VpcId": {
+                    "Fn::ImportValue": "csye6225-cloud-Networking-VPC-Id"
+                },
+                "GroupDescription": "Security group for web server",
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "tcp",
@@ -122,6 +156,12 @@
                         "FromPort": 443,
                         "ToPort": 443,
                         "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 8080,
+                        "ToPort": 8080,
+                        "CidrIp": "0.0.0.0/0"   
                     }
                 ]
             }
@@ -129,8 +169,10 @@
         "dbsecuritygroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
-                "VpcId":{"Fn::ImportValue":"csye6225-cloud-Networking-VPC-Id"},
-                "GroupDescription" : "Ec2 security group for DB",
+                "VpcId": {
+                    "Fn::ImportValue": "csye6225-cloud-Networking-VPC-Id"
+                },
+                "GroupDescription": "Ec2 security group for DB",
                 "SecurityGroupIngress": [
                     {
                         "SourceSecurityGroupId": {
@@ -158,29 +200,40 @@
                         "KeyType": "HASH"
                     }
                 ],
-                "ProvisionedThroughput":{
-                    "ReadCapacityUnits" : 10,
-                    "WriteCapacityUnits" : 5
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 10,
+                    "WriteCapacityUnits": 5
                 },
                 "TableName": "csye6225"
             }
         },
-        "rdsinstance":{
-            "Type":"AWS::RDS::DBInstance",
-            "Properties":{
-                "DBInstanceClass" : "db.t2.medium",
-                "AllocatedStorage" : "20",
-                "Engine" : "MySQL",
-                "MultiAZ" : "false",
-                "DBInstanceIdentifier" : "csye6225-Spring2018",
-                "MasterUsername" : "csye6225master",
-                "MasterUserPassword" : "csye6225password",
-                "DBSubnetGroupName" : {"Ref": "dbsubnetgroup"},
-                "PubliclyAccessible" : true,
-                "DBName" : "csye6225",
-                "Port":"3306",
-                "VPCSecurityGroups" : [ {"Ref": "dbsecuritygroup"}],
-                "StorageType" : "gp2"
+        "rdsinstance": {
+            "Type": "AWS::RDS::DBInstance",
+            "Properties": {
+                "DBInstanceClass": "db.t2.medium",
+                "AllocatedStorage": "20",
+                "Engine": "MySQL",
+                "MultiAZ": "false",
+                "DBInstanceIdentifier": "csye6225-Spring2019",
+                "MasterUsername": "csye6225master",
+                "MasterUserPassword": "csye6225password",
+                "DBSubnetGroupName": {
+                    "Ref": "dbsubnetgroup"
+                },
+                "PubliclyAccessible": true,
+                "DBName": "csye6225",
+                "Port": "3306",
+                "VPCSecurityGroups": [
+                    {
+                        "Ref": "dbsecuritygroup"
+                    }
+                ],
+                "StorageType": "gp2"
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "a853732c-f945-4991-8eb3-b467bf9cf322"
+                }
             }
         }
     }

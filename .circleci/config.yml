@@ -15,8 +15,6 @@ jobs:
           name: Install awscli
           command: |
             sudo pip install awscli
-            aws configure set aws_access_key_id AKIAICHTO2S3TG3C6ZMQ
-            aws configure set aws_secret_access_key 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
             aws configure set default.region us-east-1
 
       - run:
@@ -52,8 +50,8 @@ jobs:
       - run:
           name: Upload Artifact to S3
           command: |
-            aws s3 cp --recursive codedeploy_artifact s3://code-deploy.csye6225-spring2019-gadhiyah.me
+            aws s3 cp --recursive codedeploy_artifact s3://${CODE_DEPLOY_S3_BUCKET}
       - run:
           name: Make CodeDeploy API call
           command: |
-            aws deploy create-deployment --output json --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name csye6225-webapp-deployment --s3-location bucket=code-deploy.csye6225-spring2019-gadhiyah.me,bundleType=zip,key=csye6225-web-app-${CIRCLE_BUILD_NUM}.zip
+            aws deploy create-deployment --output json --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name csye6225-webapp-deployment --s3-location bucket=${CODE_DEPLOY_S3_BUCKET},bundleType=zip,key=csye6225-web-app-${CIRCLE_BUILD_NUM}.zip

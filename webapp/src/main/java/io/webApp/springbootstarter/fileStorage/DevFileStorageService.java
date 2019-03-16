@@ -18,6 +18,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -49,7 +50,8 @@ public class DevFileStorageService implements FileStorageService {
 //		AWSCredentials credentials = new BasicAWSCredentials(this.accessKey, this.secretKey);
 //		this.s3client = new AmazonS3Client(credentials);
 		
-		this.s3client = AmazonS3ClientBuilder.standard().withCredentials(new ProfileCredentialsProvider()).build();
+		//this.s3client = AmazonS3ClientBuilder.standard().withCredentials(new ProfileCredentialsProvider()).build();
+		this.s3client = AmazonS3ClientBuilder.standard().withCredentials(new InstanceProfileCredentialsProvider(false)).build();
 	}
 
 	private File convertMultiPartToFile(MultipartFile file) throws IOException {
@@ -66,7 +68,11 @@ public class DevFileStorageService implements FileStorageService {
 	}
 
 	private void uploadFileTos3bucket(String fileName, File file) {
+		try {
 		s3client.putObject(new PutObjectRequest(bucketName, fileName, file));
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
 //				new PutObjectRequest(bucketName, fileName, file).withCannedAcl(CannedAccessControlList.PublicRead));
 	}
 

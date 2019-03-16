@@ -9,108 +9,20 @@
         },
         "circleciusername":{
             "Type":"String"
+        },
+        "deploybucket":{
+          "Type":"String"
+        },
+        "attachmentbucket":{
+          "Type":"String"
         }
     },
     "Resources":{
-        "CodeDeployEC2S3":{
-            "Type":"AWS::IAM::Policy",
-            "Properties":{
-                "PolicyName" : "CodeDeploy-EC2-S3",
-		        "Roles":[{"Ref":"CodeDeployEC2ServiceRole"}],
-                "PolicyDocument":{
-                    "Version" : "2012-10-17",
-                    "Statement":[{
-                        "Action":[
-                            "s3:Get*",
-                            "s3:List*"
-                        ],
-                        "Effect":"Allow",
-                        "Resource" : [{
-                            "Fn::Sub":"arn:aws:s3:::code-deploy.csye6225-spring2019-gadhiyah.me/*"
-                        }]
-                    },
-                    {
-                        "Action":[
-                            "s3:Get*",
-                            "s3:List*",
-                            "s3:Delete*",
-                            "s3:Put*"
-                        ],
-                        "Effect":"Allow",
-                        "Resource" : [{
-                            "Fn::Sub":"arn:aws:s3:::csye6225-spring2019-gadhiyah.me.csye6225.com/*"
-                        }]
-                    }
-                    ]
-                }
-            }
-        },
-        "CircleCIUploadToS3":{
-            "Type":"AWS::IAM::Policy",
-            "Properties":{
-                "PolicyName" : "CircleCI-Upload-To-S3",
-                "Users":[{"Ref":"circleciusername"}],
-                "PolicyDocument":{
-                    "Version" : "2012-10-17",
-                    "Statement":[{
-                        "Action":[
-                            "s3:PutObject"
-                        ],
-                        "Effect":"Allow",
-                        "Resource" : [{
-                            "Fn::Sub":"arn:aws:s3:::code-deploy.csye6225-spring2019-gadhiyah.me/*"
-                        }]
-                    }]
-                }
-            }
-
-        },
-        
-        "CirlceCICodeDeploy":{
-            "Type":"AWS::IAM::Policy",
-            "Properties":{
-                "PolicyName" : "CirlceCI-Code-Deploy",
-                "Users":[{"Ref":"circleciusername"}],
-                "PolicyDocument":{
-                    "Version" : "2012-10-17",
-                    "Statement":[{
-                        "Action":[
-                            "codedeploy:RegisterApplicationRevision",
-                            "codedeploy:GetApplicationRevision"
-                        ],
-                        "Effect":"Allow",
-                        "Resource" : [{"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":application:csye6225-webapp"]]} ]
-                    },
-                    {
-                        "Action":[
-                            "codedeploy:CreateDeployment",
-                            "codedeploy:GetDeployment"
-                        ],
-                        "Effect":"Allow",
-                        "Resource" : "*"
-                    },
-                    {
-                        "Action":[
-                            "codedeploy:GetDeploymentConfig"
-                        ],
-                        "Effect":"Allow",
-                        "Resource" : [
-                            {"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":deploymentconfig:CodeDeployDefault.OneAtATime"]]},
-                            {"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":deploymentconfig:CodeDeployDefault.HalfAtATime"]]},
-                            {"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":deploymentconfig:CodeDeployDefault.AllAtOnce"]]}
-                        ]
-                    }
-
-                    ]
-                }
-            }
-
-        },
         "circleciec2ami":{
-            "Type":"AWS::IAM::Policy",
+            "Type":"AWS::IAM::ManagedPolicy",
             "Properties":{
-                "PolicyName" : "circleci-ec2-ami",
-                "Users":["circleci"],
+                "ManagedPolicyName" : "circleci-ec2-ami",
+                "Users":[{"Ref":"circleciusername"}],
                 "PolicyDocument":{
                     "Version" : "2012-10-17",
                     "Statement":[{
@@ -154,10 +66,92 @@
                 }
             }
         },
+        "CodeDeployEC2S3":{
+            "Type":"AWS::IAM::ManagedPolicy",
+            "Properties":{
+                "ManagedPolicyName" : "CodeDeploy-EC2-S3",
+		            "PolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Statement":[{
+                        "Action":[
+                            "s3:Get*",
+                            "s3:List*"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : [{
+                            "Fn::Join":["",["arn:aws:s3:::",{"Ref":"deploybucket"},"/*"]]
+                            }]
+                    }
+                    ]
+                }
+            }
+        },
+        "CircleCIUploadToS3":{
+            "Type":"AWS::IAM::ManagedPolicy",
+            "Properties":{
+                "ManagedPolicyName" : "CircleCI-Upload-To-S3",
+                "Users":[{"Ref":"circleciusername"}],
+                "PolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Statement":[{
+                        "Action":[
+                            "s3:PutObject"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : [{
+                            "Fn::Join":["",["arn:aws:s3:::",{"Ref":"deploybucket"},"/*"]]
+                        }]
+                    }]
+                }
+            }
+
+        },
+
+        "CirlceCICodeDeploy":{
+            "Type":"AWS::IAM::ManagedPolicy",
+            "Properties":{
+                "ManagedPolicyName" : "CirlceCI-Code-Deploy",
+                "Users":[{"Ref":"circleciusername"}],
+                "PolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Statement":[{
+                        "Action":[
+                            "codedeploy:RegisterApplicationRevision",
+                            "codedeploy:GetApplicationRevision"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : [{"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":application:csye6225-webapp"]]} ]
+                    },
+                    {
+                        "Action":[
+                            "codedeploy:CreateDeployment",
+                            "codedeploy:GetDeployment"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : "*"
+                    },
+                    {
+                        "Action":[
+                            "codedeploy:GetDeploymentConfig"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : [
+                            {"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":deploymentconfig:CodeDeployDefault.OneAtATime"]]},
+                            {"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":deploymentconfig:CodeDeployDefault.HalfAtATime"]]},
+                            {"Fn::Join": [ "", ["arn:aws:codedeploy:us-east-1:", {"Ref": "AccTag"},":deploymentconfig:CodeDeployDefault.AllAtOnce"]]}
+                        ]
+                    }
+
+                    ]
+                }
+            }
+
+        },
+        
         "s3Bucketcodedeploy" : {
             "Type" : "AWS::S3::Bucket",
             "Properties" : {
-                "BucketName" :"code-deploy.csye6225-spring2019-gadhiyah.me"
+                "BucketName" :{"Ref":"deploybucket"}
             }
         },
 
@@ -165,6 +159,14 @@
             "Type":"AWS::IAM::Role",
             "Properties":{
                 "RoleName":"CodeDeployEC2ServiceRole",
+                "ManagedPolicyArns":[
+               {
+                  "Ref":"CodeDeployEC2S3"
+               },
+               {
+                  "Ref":"AccessAttachmentToS3Bucket"
+               }
+            ],
                 "AssumeRolePolicyDocument":{
                     "Version" : "2012-10-17",
                     "Statement": [ {
@@ -177,13 +179,7 @@
                 }
             }
         },
-        "ec2instanceprofile":{
-            "Type":"AWS::IAM::InstanceProfile",
-            "Properties":{
-                "InstanceProfileName": "CodeDeployEC2ServiceRoleProfile",
-                "Roles":[{"Ref":"CodeDeployEC2ServiceRole"}]
-            }
-        },
+        
         "CodeDeployServiceRole":{
             "Type":"AWS::IAM::Role",
             "Properties":{
@@ -201,6 +197,35 @@
                 "ManagedPolicyArns":[
                     "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
                     ]
+            }
+        },
+        "ec2instanceprofile":{
+            "Type":"AWS::IAM::InstanceProfile",
+            "Properties":{
+                "InstanceProfileName": "CodeDeployEC2ServiceRoleProfile",
+                "Roles":[{"Ref":"CodeDeployEC2ServiceRole"}]
+            }
+        },
+        "AccessAttachmentToS3Bucket":{
+            "Type":"AWS::IAM::ManagedPolicy",
+            "Properties":{
+                "ManagedPolicyName" : "Access-Attachment-To-S3-Bucket",
+                "Description":"Policy for uploading attachments into S3",
+		            "PolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Statement":[{
+                        "Action":[
+                            "s3:Get*",
+                            "s3:List*",
+                            "s3:Delete*",
+                            "s3:Put*"
+                        ],
+                        "Effect":"Allow",
+                        "Resource" : [{
+                            "Fn::Join":["",["arn:aws:s3:::",{"Ref":"attachmentbucket"},"/*"]]
+                        }]
+                    }]
+                }
             }
         },
         "codedeployapplication":{
