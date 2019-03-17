@@ -60,4 +60,13 @@ public class attachmentDao {
 		}
 		return false;
 	}
+	
+	public boolean DeleteattachmentUnderNoteID(String noteID) {
+		List<attachment> attachmentList = findBynoteID(noteID);
+		for (attachment i : attachmentList) {
+				deleteattachment(i.getAttachmentID());
+				return true;
+		}
+		return false;
+	}
 }

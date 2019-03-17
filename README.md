@@ -53,7 +53,7 @@ d) FileStorageService.java
 AWS -->
 
 a) i) Navigate to cloud formation folder and run the following scripts ./csye6225-aws-cf-create-stack.sh and ./csye6225-aws-cf-terminate-stack.sh to create and teardown the stack respectively.
-a) ii) Navigate to cloud formation folder and run the following scripts ./csye6225-aws-cf-application-creat-stack.sh and ./csye6225-aws-cf-terminate-stack.sh to create\delete EC2 instance, create\delete DynamoDB table, create\delete RDS instance etc. 
+a) ii) Navigate to cloud formation folder and run the following scripts ./csye6225-aws-cf-application-creat-stack.sh and ./csye6225-aws-cf-terminate-stack.sh to create\delete EC2 instance, create\delete DynamoDB table, create\delete RDS instance etc.
 
 b) Navigate to scripts folder and run the following scripts ./csye6225-aws-networking-setup.sh and ./csye6225-aws-networking-teardown.sh to create and teardown the VPC respectively.
 
@@ -66,4 +66,11 @@ Check for valid email ID.
 Check for stacks creation and deletion
 
 ## CI/CD
+#Create the CI-CI stack
+#Create the networking stack
 
+Trigger the build for circleci using the curl command
+
+#create the application Stack
+
+Trigger the build for circleci using the curl command to deploy the code in centos.
