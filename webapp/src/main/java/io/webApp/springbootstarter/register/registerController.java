@@ -259,14 +259,17 @@ public class registerController {
 				if (noteDao.DeleteNoteUnderEmailList(noteId, email)) {
 						attachmentlist = attachDao.findBynoteID(noteId);
 						for (attachment i : attachmentlist) {
+							attachDao.deleteattachment(i.getAttachmentID());
+							
 							if (!fileStorageService.DeleteFile(i.getUrl()))
 								throw new NoSuchElementException();
 						}
-					if (attachDao.DeleteattachmentUnderNoteID(noteId)) {
+					return ResponseEntity.status(HttpStatus.OK).build();
+					/*if (attachDao.DeleteattachmentUnderNoteID(noteId)) {
 						return ResponseEntity.status(HttpStatus.OK).build();
 					}else {
 						throw new NoSuchElementException();
-					}
+					}*/
 				}
 				else {
 					throw new NoSuchElementException();
