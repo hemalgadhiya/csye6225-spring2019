@@ -109,7 +109,7 @@
                                 "sudo echo export endpointUrl >> /etc/profile.d/envvariable.sh \n",
                                 "source /etc/profile.d/envvariable.sh \n",
                                 "mkdir /home/centos/webapp \n",
-                                "chown centos:centos -R /home/centos/webapp \n",
+                                "sudo chown centos:centos -R /home/centos/webapp \n",
                                 "iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination :8080"
                             ]
                         ]
