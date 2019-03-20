@@ -158,7 +158,7 @@ public class registerController {
 		return Ctime.getCurrentTime();
 	}
 
-	@RequestMapping(method = RequestMethod.POST, value = "/note")
+	@RequestMapping(method = RequestMethod.POST, value = "/note/hemal")
 	public ResponseEntity<Note> createNote(@RequestBody Note nt,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
 		try {
