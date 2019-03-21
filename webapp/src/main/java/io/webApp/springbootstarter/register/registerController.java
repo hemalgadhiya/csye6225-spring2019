@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.timgroup.statsd.StatsDClient;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -39,6 +42,18 @@ public class registerController {
 	public register userDetails;
 	private List<attachment> attachmentlist;
 	private final static Logger logger = LoggerFactory.getLogger(registerController.class);
+	private final String testHTTPGET = "endpoint.test.HTTP.GET";
+	private final String userHTTPGET = "endpoint.HTTP.GET";
+	private final String userHTTPPOST = "endpoint.user.register.HTTP.POST";
+	private final String noteHTTPPOST = "endpoint.note.HTTP.POST";
+	private final String noteHTTPGET = "endpoint.note.HTTP.GET";
+	private final String noteidHTTPGET = "endpoint.note.id.HTTP.GET";
+	private final String noteidHTTPPUT = "endpoint.note.id.HTTP.PUT";
+	private final String noteidHTTPDELETE = "endpoint.note.id.HTTP.DELETE";
+	private final String noteidattachmentsHTTPPOST = "endpoint.note.id.attachments.HTTP.POST";
+	private final String noteidattachmentsHTTPGET = "endpoint.note.id.attachments.HTTP.GET";
+	private final String noteidattachmentsidHTTPPUT = "endpoint.note.id.attachments.id.HTTP.PUT";
+	private final String noteidattachmentsidHTTPDELETE = "endpoint.note.id.attachments.id.HTTP.DELETE";
 
 	@Autowired
 	private UserRepository userRepository;
@@ -52,9 +67,13 @@ public class registerController {
 	@Autowired
 	private attachmentDao attachDao;
 
+	@Autowired
+	private StatsDClient statsd;
+
 	/* Method to verify the Junit test suite */
 	@RequestMapping(method = RequestMethod.GET, value = "/test", produces = "application/json")
 	public register fetchuser() {
+		statsd.incrementCounter(testHTTPGET);
 		register user = new register();
 		user.setEmail("qwerty@gmail.com");
 		user.setPassword("Admin@123");
@@ -63,6 +82,7 @@ public class registerController {
 
 	@RequestMapping(method = RequestMethod.POST, value = "/user/register")
 	public String addUser(@RequestBody register userDetails) {
+		statsd.incrementCounter(userHTTPPOST);
 		logger.info("POST request : \"/user/register\"");
 		if (userDetails.getEmail() == null || userDetails.getPassword() == null || userDetails.getEmail().isEmpty()
 				|| userDetails.getPassword().isEmpty()) {
@@ -89,6 +109,7 @@ public class registerController {
 
 	@RequestMapping(method = RequestMethod.GET, value = "/", produces = "application/json")
 	public String ValidUser(@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		statsd.incrementCounter(userHTTPGET);
 		logger.info("GET request : \"/\"");
 		String status = checkAuth(auth);
 		if (status.equals("Success")) {
@@ -103,6 +124,7 @@ public class registerController {
 	@RequestMapping(method = RequestMethod.POST, value = "/note")
 	public ResponseEntity<Note> createNote(@RequestBody Note nt,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		statsd.incrementCounter(noteHTTPPOST);
 		logger.info("POST request: \"/note\"");
 		try {
 			String status = checkAuth(auth);
@@ -130,6 +152,7 @@ public class registerController {
 	@RequestMapping(method = RequestMethod.GET, value = "/note")
 	public ResponseEntity<List<Note>> getAllNote(
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		statsd.incrementCounter(noteHTTPGET);
 		logger.info("GET request : \"/note\"");
 		String status = checkAuth(auth);
 		if (status.equals("Success")) {
@@ -144,6 +167,7 @@ public class registerController {
 	@RequestMapping(method = RequestMethod.GET, value = "/note/{id}")
 	public ResponseEntity<Note> getNote(@PathVariable(value = "id") String noteId,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		statsd.incrementCounter(noteidHTTPGET);
 		logger.info("GET request : \"/note/" + noteId);
 		try {
 			String status = checkAuth(auth);
@@ -170,6 +194,7 @@ public class registerController {
 	@RequestMapping(method = RequestMethod.PUT, value = "/note/{id}")
 	public ResponseEntity<Note> updateNote(@PathVariable(value = "id") String noteId, @RequestBody Note nt,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		statsd.incrementCounter(noteidHTTPPUT);
 		logger.info("PUT request : \"/note/" + noteId);
 		try {
 			String status = checkAuth(auth);
@@ -219,6 +244,7 @@ public class registerController {
 	@RequestMapping(method = RequestMethod.DELETE, value = "/note/{id}")
 	public ResponseEntity<Note> deleteNote(@PathVariable(value = "id") String noteId,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		statsd.incrementCounter(noteidHTTPDELETE);
 		logger.info("DELETE request : \"/note/" + noteId);
 
 		try {
@@ -259,6 +285,7 @@ public class registerController {
 	public ResponseEntity<attachment> attach(@PathVariable(value = "id") String noteId,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth,
 			@RequestParam("file") MultipartFile file) {
+		statsd.incrementCounter(noteidattachmentsHTTPPOST);
 		logger.info("POST request : \"/note/" + noteId + "/attachments");
 		try {
 			String status = checkAuth(auth);
@@ -307,6 +334,8 @@ public class registerController {
 	public ResponseEntity<List<attachment>> getAllNoteAttachments(
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth,
 			@PathVariable(value = "id") String noteId) {
+		statsd.incrementCounter(noteidattachmentsHTTPGET);
+
 		logger.info("GET request : \"/note/" + noteId + "/attachments");
 		String status = checkAuth(auth);
 		if (status.equals("Success")) {
@@ -323,6 +352,8 @@ public class registerController {
 			@PathVariable(value = "idattachments") String attachmentid,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth,
 			@RequestParam("file") MultipartFile file) {
+		statsd.incrementCounter(noteidattachmentsidHTTPPUT);
+
 		logger.info("PUT request : \"/note/" + noteId + "/attachments/" + attachmentid);
 		try {
 			String status = checkAuth(auth);
@@ -380,6 +411,8 @@ public class registerController {
 	public ResponseEntity<Note> deleteNoteAttachment(@PathVariable(value = "id") String noteId,
 			@PathVariable(value = "idattachments") String attachmentid,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		statsd.incrementCounter(noteidattachmentsidHTTPDELETE);
+
 		logger.info("DELETE request : \"/note/" + noteId + "/attachments/" + attachmentid);
 		try {
 			String status = checkAuth(auth);

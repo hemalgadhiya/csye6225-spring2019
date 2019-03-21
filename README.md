@@ -57,6 +57,14 @@ a) ii) Navigate to cloud formation folder and run the following scripts ./csye62
 
 b) Navigate to scripts folder and run the following scripts ./csye6225-aws-networking-setup.sh and ./csye6225-aws-networking-teardown.sh to create and teardown the VPC respectively.
 
+Added cloudwatchconfig.json in the project root directory.
+
+Provided necessary policy to the cloudwatch agent.
+
+Updated POM.xml with the latest dependency.
+
+Designed and Implemented log4j2-spring.xml in the Resources folder.
+Designed and Implemented MetricsConfig.java module in the SpringBoot Application.
 
 ## Deploy Instructions
 
