@@ -9,6 +9,8 @@ import java.util.Date;
 
 import javax.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,9 @@ public class DevFileStorageService implements FileStorageService {
 	private AmazonS3 s3client;
 	
 	private Path fileStorageLocation;
+	
+	private final static Logger logger = LoggerFactory.getLogger(DevFileStorageService.class);
+
 
 	@Value("${endpointUrl}")
 	private String endpointUrl;
@@ -71,7 +76,7 @@ public class DevFileStorageService implements FileStorageService {
 		try {
 		s3client.putObject(new PutObjectRequest(bucketName, fileName, file));
 		}catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.toString());
 		}
 //				new PutObjectRequest(bucketName, fileName, file).withCannedAcl(CannedAccessControlList.PublicRead));
 	}
@@ -86,7 +91,7 @@ public class DevFileStorageService implements FileStorageService {
 			uploadFileTos3bucket(fileName, file);
 			file.delete();
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.toString());
 		}
 		return fileUrl;
 	}
@@ -94,18 +99,18 @@ public class DevFileStorageService implements FileStorageService {
 	public boolean DeleteFile(String fileUrl) {
 		 try {
 		        String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-		        System.out.println("fileName : " + fileName);
+		        logger.debug("fileName : " + fileName);
 		        s3client.deleteObject(new DeleteObjectRequest(bucketName, fileName));
 		        }
 		        catch (AmazonServiceException e) {
 		            // The call was transmitted successfully, but Amazon S3 couldn't process
 		            // it, so it returned an error response.
-		            e.printStackTrace();
+					logger.error(e.toString());
 		            return false;
 		            } catch (SdkClientException e) {
 		            // Amazon S3 couldn't be contacted for a response, or the client
 		            // couldn't parse the response from Amazon S3.
-		            e.printStackTrace();
+		    		logger.error(e.toString());
 		            return false;
 		            }
 		        return true;

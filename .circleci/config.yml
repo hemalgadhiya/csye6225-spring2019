@@ -37,6 +37,7 @@ jobs:
             mkdir -p codedeploy_artifact
             cd codedeploy_artifact
             cp ../infrastructure/aws/codedeploy/*.sh .
+            cp ../cloudwatchconfig.json .
             cp ../*.yml .
             cp ../webapp/target/webApp-0.0.1-SNAPSHOT.jar .
             cp ../webapp/src/main/resources/*.properties .

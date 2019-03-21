@@ -4,10 +4,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import java.util.ArrayList;
 
 import org.apache.tomcat.util.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,14 +19,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import io.webApp.springbootstarter.attachments.attachment;
 import io.webApp.springbootstarter.attachments.attachmentDao;
 import io.webApp.springbootstarter.attachments.metaData;
-import io.webApp.springbootstarter.fileStorage.DevFileStorageService;
 import io.webApp.springbootstarter.fileStorage.FileStorageService;
 import io.webApp.springbootstarter.notes.Note;
 import io.webApp.springbootstarter.notes.NoteDao;
@@ -35,13 +34,11 @@ public class registerController {
 
 	private final static Pattern VALID_EMAIL_ADDRESS_REGEX = Pattern
 			.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
-	// private final static Pattern VALID_PASSWORD_REGEX = Pattern.compile
-	// ("((?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,20})");
-
 	private String email;
 	private String password;
-
 	public register userDetails;
+	private List<attachment> attachmentlist;
+	private final static Logger logger = LoggerFactory.getLogger(registerController.class);
 
 	@Autowired
 	private UserRepository userRepository;
@@ -54,127 +51,78 @@ public class registerController {
 
 	@Autowired
 	private attachmentDao attachDao;
-	
-	private List<attachment> attachmentlist;
 
 	/* Method to verify the Junit test suite */
 	@RequestMapping(method = RequestMethod.GET, value = "/test", produces = "application/json")
 	public register fetchuser() {
-
 		register user = new register();
-		user.setEmail("paavan@gmail.com");
-		user.setPassword("Pass@123");
+		user.setEmail("qwerty@gmail.com");
+		user.setPassword("Admin@123");
 		return user;
-
 	}
 
 	@RequestMapping(method = RequestMethod.POST, value = "/user/register")
-
 	public String addUser(@RequestBody register userDetails) {
+		logger.info("POST request : \"/user/register\"");
 		if (userDetails.getEmail() == null || userDetails.getPassword() == null || userDetails.getEmail().isEmpty()
 				|| userDetails.getPassword().isEmpty()) {
+			logger.error("Credentials should not be empty");
 			return "{\"RESPONSE\" : \"Credentials should not be empty\"}";
 		}
 
 		if (checkVaildEmailAddr(userDetails.getEmail())) {
 			if (checkAlreadyPresent(userDetails)) {
+				logger.debug("User email already exists. Please Login");
 				return "{\"RESPONSE\" : \"User email already exists. Please Login\"}";
 			}
 			if (!isValidPassword(userDetails.getPassword())) {
+				logger.error("/nPassword should follow NIST standards/n");
 				return "{\"RESPONSE\" : \"password should follow NIST standards\"}";
 			}
 			registerUser(userDetails);
 			return "{\"RESPONSE\" : \"Registeration Successful\"}";
-		} else
+		} else {
+			logger.error("Invalid emailID. Check it out !!!");
 			return "{\"RESPONSE\" : \"Invalid emailID. Check it out !!!\"}";
-	}
-
-	public boolean checkVaildEmailAddr(String email) {
-		System.out.println("Checking Email ID pattern");
-		Matcher mat = VALID_EMAIL_ADDRESS_REGEX.matcher(email);
-		return mat.find();
-	}
-
-	public boolean checkAlreadyPresent(register userDetails) {
-		System.out.println("Checking Email ID Already present");
-		ArrayList<register> dbList = new ArrayList<>(userRepository.findAll());
-
-		for (register i : dbList) {
-			if (i.getEmail().equals(userDetails.getEmail())) {
-				System.out.println("already registered");
-				return true;
-			}
 		}
-		return false;
-	}
-
-	public boolean checkPassword(register userDetails) {
-		System.out.println("Checking password");
-		ArrayList<register> dbList = new ArrayList<>(userRepository.findAll());
-
-		for (register i : dbList) {
-			if (i.getEmail().equals(userDetails.getEmail())) {
-				// String password = BCrypt.hashpw(userDetails.getPassword(), BCrypt.gensalt());
-				if (BCrypt.checkpw(userDetails.getPassword(), i.getPassword())) {
-					System.out.println("It matches");
-					return true;
-				} else
-					System.out.println("It does not match");
-			}
-		}
-		return false;
-	}
-
-	public boolean isValidPassword(String password) {
-		if (!(password.matches("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"))) {
-			System.out.println("Invalid password");
-			return false;
-		}
-		return true;
-	}
-
-	public boolean registerUser(@RequestBody final register userData) {
-
-		String password = BCrypt.hashpw(userData.getPassword(), BCrypt.gensalt());
-		System.out.println("Password salt : " + password);
-		userData.setPassword(password);
-
-		userRepository.save(userData);
-		return true;
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = "/", produces = "application/json")
 	public String ValidUser(@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		logger.info("GET request : \"/\"");
 		String status = checkAuth(auth);
 		if (status.equals("Success")) {
-			String time = "{\"RESPONSE: Token Authenticated \" : " + currentTime() + "\"}\"";
+			String time = "{\"RESPONSE\" : " + currentTime() + "\"}\"";
 			return time;
-		} else
+		} else {
+			logger.error(status);
 			return status;
-	}
-
-	public String currentTime() {
-		currentTime Ctime = new currentTime();
-		return Ctime.getCurrentTime();
+		}
 	}
 
 	@RequestMapping(method = RequestMethod.POST, value = "/note/hemal")
 	public ResponseEntity<Note> createNote(@RequestBody Note nt,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		logger.info("POST request: \"/note\"");
 		try {
 			String status = checkAuth(auth);
 			if (status.equals("Success")) {
 				if (nt.getTitle().isEmpty() || nt.getContent().isEmpty()) {
+					logger.error("\nTitle/Content empty\n");
 					throw new Exception();
 				}
 				nt.setEmailID(email);
-				
+
 				Note note = noteDao.Save(nt);
+				logger.debug("HTTP : 201 created");
 				return ResponseEntity.status(HttpStatus.CREATED).body(note);
-			} else
+			} else {
+				logger.error("HTTP : 401 unauthorized");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+			}
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			logger.error("HTTP : 400 bad request");
+			logger.error(ex.toString());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
 	}
@@ -182,30 +130,39 @@ public class registerController {
 	@RequestMapping(method = RequestMethod.GET, value = "/note")
 	public ResponseEntity<List<Note>> getAllNote(
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		logger.info("GET request : \"/note\"");
 		String status = checkAuth(auth);
 		if (status.equals("Success")) {
+			logger.debug("HTTP : 200 created");
 			return ResponseEntity.status(HttpStatus.OK).body(noteDao.findByemailID(email));
-		} else
+		} else {
+			logger.error("HTTP : 401 unauthorized");
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = "/note/{id}")
 	public ResponseEntity<Note> getNote(@PathVariable(value = "id") String noteId,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		logger.info("GET request : \"/note/" + noteId);
 		try {
 			String status = checkAuth(auth);
 
 			if (status.equals("Success")) {
 				Note nt = noteDao.findNoteUnderEmailList(noteId, email);
 				if (nt == null) {
+					logger.error("Empty note");
 					throw new NoSuchElementException();
 				}
-
+				logger.debug("HTTP : 200 created");
 				return ResponseEntity.status(HttpStatus.OK).body(nt);
-			} else
+			} else {
+				logger.error("HTTP : 401 unauthorized");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+			}
 		} catch (NoSuchElementException ex) {
-			ex.printStackTrace();
+			logger.error("HTTP : 404 not found");
+			logger.error(ex.toString());
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
 	}
@@ -213,14 +170,17 @@ public class registerController {
 	@RequestMapping(method = RequestMethod.PUT, value = "/note/{id}")
 	public ResponseEntity<Note> updateNote(@PathVariable(value = "id") String noteId, @RequestBody Note nt,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		logger.info("PUT request : \"/note/" + noteId);
 		try {
 			String status = checkAuth(auth);
 			if (status.equals("Success")) {
 				Note originalNote = noteDao.findNoteUnderEmailList(noteId, email);
 				if (originalNote == null) {
+					logger.error("Empty note");
 					throw new NoSuchElementException();
 				}
 				if (nt.getTitle().isEmpty() && nt.getContent().isEmpty()) {
+					logger.error("Title/content empty");
 					throw new Exception();
 				}
 
@@ -235,17 +195,23 @@ public class registerController {
 				Note updateNote = noteDao.Save(originalNote);
 
 				if (updateNote == null) {
+					logger.error("Empty note");
+					logger.error("HTTP : 400 Bad request");
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 				}
-
+				logger.debug("HTTP : 200 OK");
 				return ResponseEntity.status(HttpStatus.OK).body(updateNote);
-			} else
+			} else {
+				logger.error("HTTP : 401 unauthorized");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+			}
 		} catch (NoSuchElementException ex) {
-			ex.printStackTrace();
+			logger.error("HTTP : 404 not found");
+			logger.error(ex.toString());
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			logger.error("HTTP : 204 no content");
+			logger.error(ex.toString());
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		}
 	}
@@ -253,31 +219,38 @@ public class registerController {
 	@RequestMapping(method = RequestMethod.DELETE, value = "/note/{id}")
 	public ResponseEntity<Note> deleteNote(@PathVariable(value = "id") String noteId,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		logger.info("DELETE request : \"/note/" + noteId);
+
 		try {
 			String status = checkAuth(auth);
 			if (status.equals("Success")) {
 				if (noteDao.DeleteNoteUnderEmailList(noteId, email)) {
-						attachmentlist = attachDao.findBynoteID(noteId);
-						for (attachment i : attachmentlist) {
-							attachDao.deleteattachment(i.getAttachmentID());
-							
-							if (!fileStorageService.DeleteFile(i.getUrl()))
-								throw new NoSuchElementException();
-						}
-					return ResponseEntity.status(HttpStatus.OK).build();
-					/*if (attachDao.DeleteattachmentUnderNoteID(noteId)) {
-						return ResponseEntity.status(HttpStatus.OK).build();
-					}else {
+					attachmentlist = attachDao.findBynoteID(noteId);
+					for (attachment i : attachmentlist) {
+						attachDao.deleteattachment(i.getAttachmentID());
+
+						if (!fileStorageService.DeleteFile(i.getUrl()))
+							logger.error("Delete file failed");
 						throw new NoSuchElementException();
-					}*/
-				}
-				else {
+					}
+					logger.debug("HTTP : 200 OK");
+					return ResponseEntity.status(HttpStatus.OK).build();
+					/*
+					 * if (attachDao.DeleteattachmentUnderNoteID(noteId)) { return
+					 * ResponseEntity.status(HttpStatus.OK).build(); }else { throw new
+					 * NoSuchElementException(); }
+					 */
+				} else {
+					logger.error("Note not present");
 					throw new NoSuchElementException();
 				}
-			} else
+			} else {
+				logger.error("HTTP : 401 unauthorized");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+			}
 		} catch (NoSuchElementException ex) {
-			ex.printStackTrace();
+			logger.error("HTTP : 400 bad request");
+			logger.error(ex.toString());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
 	}
@@ -286,53 +259,63 @@ public class registerController {
 	public ResponseEntity<attachment> attach(@PathVariable(value = "id") String noteId,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth,
 			@RequestParam("file") MultipartFile file) {
+		logger.info("POST request : \"/note/" + noteId + "/attachments");
 		try {
 			String status = checkAuth(auth);
 			if (status.equals("Success")) {
 
 				attachment aT = new attachment();
 
-				
 				Note nt = noteDao.findNoteUnderEmailList(noteId, email);
 				if (nt == null) {
+					logger.error("Note empty");
 					throw new NoSuchElementException();
 				}
-				
+
 				aT.setNote(nt);
 
 				aT.setNoteID(noteId);
 
 				String fileName = fileStorageService.storeFile(file);
 
-				String fileDownloadUri = fileStorageService.getFileStorageLocation()+ "/" + file.getOriginalFilename();
-						
+				String fileDownloadUri = fileStorageService.getFileStorageLocation() + "/" + file.getOriginalFilename();
+
 				aT.setUrl(fileDownloadUri);
 
 				aT.setmD(new metaData(fileName, fileDownloadUri, file.getContentType(), file.getSize()));
-				
+
 				aT = attachDao.Save(aT);
-				
+
+				logger.debug("HTTP : 200 OK");
 				return ResponseEntity.status(HttpStatus.OK).body(aT);
-			} else
+			} else {
+				logger.error("HTTP : 401 unauthorized");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+			}
 		} catch (NoSuchElementException ex) {
-			ex.printStackTrace();
+			logger.error("HTTP : 204 no content");
+			logger.error(ex.toString());
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			logger.error("HTTP : 400 bad request");
+			logger.error(ex.toString());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-		} 
+		}
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = "/note/{id}/attachments")
 	public ResponseEntity<List<attachment>> getAllNoteAttachments(
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth,
 			@PathVariable(value = "id") String noteId) {
+		logger.info("GET request : \"/note/" + noteId + "/attachments");
 		String status = checkAuth(auth);
 		if (status.equals("Success")) {
+			logger.debug("HTTP : 200 OK");
 			return ResponseEntity.status(HttpStatus.OK).body(attachDao.findBynoteID(noteId));
-		} else
+		} else {
+			logger.error("HTTP : 401 unauthorized");
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
 	}
 
 	@RequestMapping(method = RequestMethod.PUT, value = "/note/{id}/attachments/{idattachments}")
@@ -340,45 +323,55 @@ public class registerController {
 			@PathVariable(value = "idattachments") String attachmentid,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth,
 			@RequestParam("file") MultipartFile file) {
+		logger.info("PUT request : \"/note/" + noteId + "/attachments/" + attachmentid);
 		try {
 			String status = checkAuth(auth);
 			if (status.equals("Success")) {
 				Note nt = noteDao.findNoteUnderEmailList(noteId, email);
 				if (nt == null) {
+					logger.error("Note empty");
 					throw new NoSuchElementException();
 				}
 
 				attachment aT = attachDao.findattachmentUnderAttachmentList(attachmentid, noteId);
 
 				if (aT == null) {
+					logger.error("Attachment empty");
 					throw new NoSuchElementException();
 				}
-				
-				if (!fileStorageService.DeleteFile(aT.getUrl()))
-					throw new NoSuchElementException(); 
-				
+
+				if (!fileStorageService.DeleteFile(aT.getUrl())) {
+					logger.error("Delete file empty");
+					throw new NoSuchElementException();
+				}
+
 				String fileName = fileStorageService.storeFile(file);
 
-				String fileDownloadUri = fileStorageService.getFileStorageLocation()+ "/" + file.getOriginalFilename();
+				String fileDownloadUri = fileStorageService.getFileStorageLocation() + "/" + file.getOriginalFilename();
 
-				//aT.setAttachmentID(attachmentid);
-				
+				// aT.setAttachmentID(attachmentid);
+
 				aT.setNote(nt);
-				
+
 				aT.setUrl(fileDownloadUri);
 
 				aT.setmD(new metaData(fileName, fileDownloadUri, file.getContentType(), file.getSize()));
 
 				attachment updatedaT = attachDao.Save(aT);
-				
+
 				if (updatedaT == null) {
+					logger.error("Attachment NULL/n");
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 				}
+				logger.debug("HTTP : 200 OK");
 				return ResponseEntity.status(HttpStatus.OK).body(updatedaT);
-			} else
+			} else {
+				logger.error("HTTP : 401 unauthorized");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+			}
 		} catch (NoSuchElementException ex) {
-			ex.printStackTrace();
+			logger.error("HTTP : 204 no content");
+			logger.error(ex.toString());
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		}
 	}
@@ -387,67 +380,142 @@ public class registerController {
 	public ResponseEntity<Note> deleteNoteAttachment(@PathVariable(value = "id") String noteId,
 			@PathVariable(value = "idattachments") String attachmentid,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+		logger.info("DELETE request : \"/note/" + noteId + "/attachments/" + attachmentid);
 		try {
 			String status = checkAuth(auth);
 			if (status.equals("Success")) {
-				
+
 				Note nt = noteDao.findNoteUnderEmailList(noteId, email);
 				if (nt == null) {
+					logger.error("Note empty");
 					throw new NoSuchElementException();
 				}
-				
+
 				attachment aT = attachDao.attachmentById(attachmentid).get();
 				if (aT == null) {
+					logger.error("Attachment NULL");
 					throw new NoSuchElementException();
 				}
-				
-				if (!fileStorageService.DeleteFile(aT.getUrl()))
-					throw new NoSuchElementException(); 
-				
-				if (attachDao.DeleteattachmentUnderNoteList(attachmentid, noteId))
-					return ResponseEntity.status(HttpStatus.OK).build();
-				else
+
+				if (!fileStorageService.DeleteFile(aT.getUrl())) {
+					logger.error("Delete file empty");
 					throw new NoSuchElementException();
-			} else
+				}
+				if (attachDao.DeleteattachmentUnderNoteList(attachmentid, noteId)) {
+					logger.debug("HTTP : 200 OK");
+					return ResponseEntity.status(HttpStatus.OK).build();
+				} else {
+					logger.error("Delete attachment empty");
+					throw new NoSuchElementException();
+				}
+			} else {
+				logger.error("HTTP : 401 unauthorized");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+			}
 		} catch (NoSuchElementException ex) {
-			ex.printStackTrace();
+			logger.error("HTTP : 204 no content");
+			logger.error(ex.toString());
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		}
 	}
 
 	public String checkAuth(String auth) {
+		logger.info("Checking User's Basic Authentication");
 		String[] encodedValue = auth.split(" ");
-		System.out.println("Auth Value:" + auth);
+		logger.debug("auth Parameter : " + auth);
 		String authValue = encodedValue[1];
-		System.out.println("auth Value:" + authValue);
+		logger.debug("auth Value after split :" + authValue);
 		byte[] decoded = Base64.decodeBase64(authValue.getBytes());
 
 		String decodedValue = new String(decoded);
-		System.out.println("Decoded Value:" + decodedValue);
+		logger.debug("Decoded Value:" + decodedValue);
 		if (decodedValue.contains(":")) {
 			String[] credentialValue;
 			credentialValue = decodedValue.split(":");
 			if (credentialValue.length < 2) {
+				logger.error("Credentials should not be empty");
 				return "{\"RESPONSE\" : \"Credentials should not be empty\"}";
 			}
 			email = credentialValue[0];
 			password = credentialValue[1];
 		} else {
+			logger.info("User not registered, Please register");
 			return "{\"RESPONSE\" : \"Please register\"}";
 		}
-		System.out.println("email : " + email + "/t" + "password : " + password);
+		logger.debug("email : " + email + "/t" + "password : " + password);
 
 		// check for empty strings
 		if (email.isEmpty() || password.isEmpty()) {
+			logger.error("Enter valid credentials");
 			return "{\"RESPONSE\" : \"Enter valid Credentials\"}";
 		}
 		userDetails = new register(email, password);
 
 		if (!checkVaildEmailAddr(email) || !checkAlreadyPresent(userDetails) || !checkPassword(userDetails)) {
+			logger.error("Invalid credentials");
 			return "{\"RESPONSE\" : \"Invalid credentials\"}";
 		}
 		return "Success";
+	}
+
+	public boolean checkVaildEmailAddr(String email) {
+		logger.info("Checking Email ID pattern");
+		Matcher mat = VALID_EMAIL_ADDRESS_REGEX.matcher(email);
+		return mat.find();
+	}
+
+	public boolean checkAlreadyPresent(register userDetails) {
+		logger.info("Checking Email ID Already present");
+		ArrayList<register> dbList = new ArrayList<>(userRepository.findAll());
+
+		for (register i : dbList) {
+			if (i.getEmail().equals(userDetails.getEmail())) {
+				logger.debug("already registered");
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean checkPassword(register userDetails) {
+		logger.info("Checking password");
+		ArrayList<register> dbList = new ArrayList<>(userRepository.findAll());
+
+		for (register i : dbList) {
+			if (i.getEmail().equals(userDetails.getEmail())) {
+				// String password = BCrypt.hashpw(userDetails.getPassword(), BCrypt.gensalt());
+				if (BCrypt.checkpw(userDetails.getPassword(), i.getPassword())) {
+					logger.debug("It matches");
+					return true;
+				} else
+					logger.error("It does not match");
+			}
+		}
+		return false;
+	}
+
+	public boolean isValidPassword(String password) {
+		if (!(password.matches("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"))) {
+			logger.error("Invalid password");
+			return false;
+		}
+		logger.debug("Valid password");
+		return true;
+	}
+
+	public boolean registerUser(@RequestBody final register userData) {
+
+		String password = BCrypt.hashpw(userData.getPassword(), BCrypt.gensalt());
+		logger.debug("Password salt : " + password);
+		userData.setPassword(password);
+
+		userRepository.save(userData);
+		return true;
+	}
+
+	public String currentTime() {
+		currentTime Ctime = new currentTime();
+		return Ctime.getCurrentTime();
 	}
 
 }

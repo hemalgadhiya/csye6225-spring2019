@@ -147,7 +147,7 @@
             }
 
         },
-        
+
         "s3Bucketcodedeploy" : {
             "Type" : "AWS::S3::Bucket",
             "Properties" : {
@@ -165,7 +165,8 @@
                },
                {
                   "Ref":"AccessAttachmentToS3Bucket"
-               }
+               },
+               "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
             ],
                 "AssumeRolePolicyDocument":{
                     "Version" : "2012-10-17",
@@ -179,7 +180,7 @@
                 }
             }
         },
-        
+
         "CodeDeployServiceRole":{
             "Type":"AWS::IAM::Role",
             "Properties":{
@@ -203,7 +204,9 @@
             "Type":"AWS::IAM::InstanceProfile",
             "Properties":{
                 "InstanceProfileName": "CodeDeployEC2ServiceRoleProfile",
-                "Roles":[{"Ref":"CodeDeployEC2ServiceRole"}]
+                "Roles":[
+                    {"Ref":"CodeDeployEC2ServiceRole"}
+                ]
             }
         },
         "AccessAttachmentToS3Bucket":{

@@ -1,5 +1,7 @@
 package io.webApp.springbootstarter.fileStorage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.Resource;
@@ -21,6 +23,7 @@ import java.nio.file.StandardCopyOption;
 public class DefaultFileStorageService implements FileStorageService {
 
 	private final Path fileStorageLocation;
+	private final static Logger logger = LoggerFactory.getLogger(DefaultFileStorageService.class);
 
 	@Autowired
 	public DefaultFileStorageService(FileStorageProperties fileStorageProperties) {
@@ -74,7 +77,7 @@ public class DefaultFileStorageService implements FileStorageService {
 		try {
 			return Files.deleteIfExists(targetLocation);
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			logger.error(ex.toString());
 			return false;
 		}
 	}
