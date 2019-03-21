@@ -100,7 +100,7 @@ public class registerController {
 		}
 	}
 
-	@RequestMapping(method = RequestMethod.POST, value = "/note/hemal")
+	@RequestMapping(method = RequestMethod.POST, value = "/note")
 	public ResponseEntity<Note> createNote(@RequestBody Note nt,
 			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
 		logger.info("POST request: \"/note\"");
