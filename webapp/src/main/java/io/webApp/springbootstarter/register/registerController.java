@@ -1,15 +1,18 @@
 package io.webApp.springbootstarter.register;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.ArrayList;
 
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,10 +23,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.AmazonSNSClient;
+import com.amazonaws.services.sns.model.PublishRequest;
+import com.amazonaws.services.sns.model.PublishResult;
 import com.timgroup.statsd.StatsDClient;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import io.webApp.springbootstarter.attachments.attachment;
 import io.webApp.springbootstarter.attachments.attachmentDao;
@@ -37,6 +42,7 @@ public class registerController {
 
 	private final static Pattern VALID_EMAIL_ADDRESS_REGEX = Pattern
 			.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
+
 	private String email;
 	private String password;
 	public register userDetails;
@@ -69,6 +75,9 @@ public class registerController {
 
 	@Autowired
 	private StatsDClient statsd;
+
+	@Value("${ARN}")
+	private String topicArn;
 
 	/* Method to verify the Junit test suite */
 	@RequestMapping(method = RequestMethod.GET, value = "/test", produces = "application/json")
@@ -450,6 +459,40 @@ public class registerController {
 			logger.error(ex.toString());
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		}
+	}
+
+	@RequestMapping(method = RequestMethod.POST, value = "/reset")
+	public String reserPassword(@RequestBody register userDetails) {
+		statsd.incrementCounter(userHTTPPOST);
+
+		logger.info("POST request : \"/reset\"");
+
+		if (userDetails.getEmail() == null) {
+			logger.error("Credentials should not be empty");
+			return "{\"RESPONSE\" : \"User email not provided\"}";
+		}
+
+		logger.debug("Reset password for Email id : " + userDetails.getEmail());
+
+		if (checkVaildEmailAddr(userDetails.getEmail())) {
+			if (!checkAlreadyPresent(userDetails)) {
+				logger.debug("This user is not registered with us");
+				return "{\"RESPONSE\" : \"User not registered ! Please register\"}";
+			}
+		}
+
+		AmazonSNS snsClient = AmazonSNSClient.builder().withRegion("us-east-1")
+				.withCredentials(new InstanceProfileCredentialsProvider(false)).build();
+
+		String resetEmail = userDetails.getEmail();
+		logger.info("Reset Email: " + resetEmail);
+
+		PublishRequest publishRequest = new PublishRequest(topicArn, userDetails.getEmail());
+		PublishResult publishResult = snsClient.publish(publishRequest);
+		logger.info("SNS Publish Result: " + publishResult);
+
+		return "{\"RESPONSE\" : \"Password Reset Link was sent to your emailID\"}";
+
 	}
 
 	public String checkAuth(String auth) {

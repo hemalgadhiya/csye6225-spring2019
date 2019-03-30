@@ -9,7 +9,6 @@
 | HemalKumar Gadhiya|001460577 |gadhiya.h@husky.neu.edu|
 | Akshay Murgod|001635872 |murgod.a@husky.neu.edu |
 
-
 ## Technology Stack
 Springboot
 Maven
@@ -20,6 +19,8 @@ AWS - Cloud Formation
 AWS - VPC
 Amazon Route 53
 Amazon S3 Bucket
+
+
 
 ## Build Instructions
 WebApp --> Import the project using the existing maven project, and find the class having the main method to run the SpringBoot Application. And also before running the SpringBoot application, make sure the MySQL server is running. And open Postman to test all the applicable REST API calls.
@@ -66,8 +67,14 @@ Updated POM.xml with the latest dependency.
 Designed and Implemented log4j2-spring.xml in the Resources folder.
 Designed and Implemented MetricsConfig.java module in the SpringBoot Application.
 
+-> As a user, we are now be able to request reset password link by calling /reset API endpoint
+-> As a user, we have enabled the web application to send a message on password_reset SNS topic for the email service function to actually send email and track the active tokens in DynamoDB.
+
 ## Deploy Instructions
 
+--> Code Deploy for AMI
+--> Code Deploy for Lambda Function
+--> Code Deploy for WebApp
 
 ## Running Tests
 Check for valid email ID.
@@ -82,3 +89,7 @@ Trigger the build for circleci using the curl command
 #create the application Stack
 
 Trigger the build for circleci using the curl command to deploy the code in centos.
+
+
+
+

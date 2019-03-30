@@ -12,6 +12,15 @@
         },
         "webappbucket": {
             "Type": "String"
+        },
+        "codedeploybucket":{
+            "Type":"String"
+        },
+        "Accountno":{
+          "Type":"String"
+        },
+        "fromaddress":{
+          "Type":"String"
         }
     },
     "Resources": {
@@ -95,6 +104,19 @@
                                     "Fn::Join": [
                                         "",
                                         [
+                                            "echo ARN=arn:aws:sns:us-east-1:",
+                                            {
+                                                "Ref": "Accountno"
+
+                                            },
+                                            ":password_reset >> /etc/profile.d/envvariable.sh \n"
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
                                             "sudo echo bucketName=",
                                             {
                                                 "Ref": "webappbucket"
@@ -104,6 +126,7 @@
                                     ]
                                 },
                                 "sudo echo export awsRDS >> /etc/profile.d/envvariable.sh \n",
+                                "sudo echo export ARN >> /etc/profile.d/envvariable.sh \n",
                                 "sudo echo export bucketName >> /etc/profile.d/envvariable.sh \n",
                                 "sudo echo endpointUrl=https://s3.us-east-1.amazonaws.com/ >> /etc/profile.d/envvariable.sh \n",
                                 "sudo echo export endpointUrl >> /etc/profile.d/envvariable.sh \n",
@@ -161,7 +184,7 @@
                         "IpProtocol": "tcp",
                         "FromPort": 8080,
                         "ToPort": 8080,
-                        "CidrIp": "0.0.0.0/0"   
+                        "CidrIp": "0.0.0.0/0"
                     }
                 ]
             }
@@ -204,6 +227,10 @@
                     "ReadCapacityUnits": 10,
                     "WriteCapacityUnits": 5
                 },
+                "TimeToLiveSpecification": {
+                "AttributeName": "TTL",
+                "Enabled": "TRUE"
+                },
                 "TableName": "csye6225"
             }
         },
@@ -229,11 +256,89 @@
                     }
                 ],
                 "StorageType": "gp2"
-            },
-            "Metadata": {
-                "AWS::CloudFormation::Designer": {
-                    "id": "a853732c-f945-4991-8eb3-b467bf9cf322"
+            }
+        },
+        "lambdaexecutionrole":{
+            "Type":"AWS::IAM::Role",
+            "Properties":{
+                "RoleName":"lambdaRole",
+                "AssumeRolePolicyDocument":{
+                    "Version":"2012-10-17",
+                    "Statement":[{
+                        "Effect":"Allow",
+                        "Principal":{
+                            "Service":["lambda.amazonaws.com"]
+                        },
+                        "Action":["sts:AssumeRole"]
+                    }]
+                },
+                "ManagedPolicyArns":[
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+                    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
+                    "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+                    "arn:aws:iam::aws:policy/AmazonSESFullAccess",
+					"arn:aws:iam::aws:policy/AmazonS3FullAccess"
+                ]
+            }
+        },
+        "lambadacloudwatch":{
+        "Type":"AWS::IAM::Policy",
+	         "Properties":{
+	            "PolicyName":"LambdaLogsPolicy",
+              "Roles":[{"Ref":"lambdaexecutionrole"}],
+              "PolicyDocument":{
+                  "Version":"2012-10-17",
+                  "Statement":[{
+                      "Action": [
+                          "logs:CreateLogGroup",
+                          "logs:CreateLogStream",
+                          "logs:PutLogEvents"
+                        ],
+                        "Effect": "Allow",
+                        "Resource": "arn:aws:logs:*:*:*"
+                    }]
+	            }
+	         }
+	   },
+        "SNS":{
+            "Type":"AWS::SNS::Topic",
+            "Properties":{
+                "TopicName": "password_reset",
+                "Subscription":[{
+                    "Endpoint" : { "Fn::GetAtt" : [ "lambdafunction", "Arn" ] },
+                    "Protocol" : "lambda"
+                }]
+            }
+        },
+        "lambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:*",
+                "FunctionName": { "Fn::GetAtt": [ "lambdafunction", "Arn" ] },
+                "Principal": "sns.amazonaws.com",
+                "SourceArn": {"Ref":"SNS"}
                 }
+
+        },
+        "lambdafunction":{
+            "Type":"AWS::Lambda::Function",
+            "Properties":{
+                "FunctionName":"SendEmailOnSNS",
+                "MemorySize":512,
+                "Environment":{
+                    "Variables" : { "fromaddr": {"Ref":"fromaddress"}}
+                  },
+                "Code":{
+                    "S3Bucket":{"Ref":"codedeploybucket"},
+                    "S3Key":"Lambda-0.0.1-SNAPSHOT.jar"
+                },
+		        "Role":{
+		            "Fn::GetAtt" : [ "lambdaexecutionrole", "Arn" ]
+
+		        },
+                "Timeout": 90,
+                "Handler": "csye6225.lambda.LogEvent::handleRequest",
+                "Runtime":"java8"
             }
         }
     }
