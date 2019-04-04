@@ -6,6 +6,12 @@ aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE||CREATE_IN_
 echo "Enter the stack you want to delete"
 read Stack_Name
 
+echo "Enter bucket name for code deploy"
+read bucket
+
+echo "Deleting codedeploy S3 bucket"
+aws s3 rb s3://$bucket --force
+
 aws cloudformation delete-stack --stack-name $Stack_Name
 
 Success=$(aws cloudformation wait stack-delete-complete --stack-name $Stack_Name)

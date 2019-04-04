@@ -27,6 +27,12 @@
             "AllowedValues":["a","b","c"]
 
         },
+        "AvailabilityZone4":{
+            "Type":"String",
+            "Default":"d",
+            "AllowedValues":["a","b","c","d"]
+
+        },
         "PublicSubnetCidrBlock1":{
             "Type":"String",
             "Default":"10.0.1.0/24",
@@ -47,6 +53,13 @@
         "PublicSubnetCidrBlock3":{
             "Type":"String",
             "Default":"10.0.3.0/24",
+            "MinLength":"10",
+            "MaxLength":"18"
+
+        },
+        "PublicSubnetCidrBlock4":{
+            "Type":"String",
+            "Default":"10.0.4.0/24",
             "MinLength":"10",
             "MaxLength":"18"
 
@@ -125,6 +138,23 @@
                     {
                         "Key": "Name",
                         "Value": {"Fn::Join":["",[{"Ref": "StackName"},"-public-az3"]]}
+                    }
+                ]
+            }
+        },
+        "publicsubnet4": {
+            "Type": "AWS::EC2::Subnet",
+            "DependsOn": "VPC",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock":{"Ref":"PublicSubnetCidrBlock4"},
+                "AvailabilityZone": {"Fn::Join":["",[{"Ref":"AWS::Region"},{"Ref":"AvailabilityZone4"}]]},
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {"Fn::Join":["",[{"Ref": "StackName"},"-public-az4"]]}
                     }
                 ]
             }
@@ -233,6 +263,22 @@
                     "Ref": "PublicRouteTable"
                 }
             }
+        },
+        "PublicSubnetRouteTableAssociation4": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "DependsOn": [
+                "publicsubnet4",
+                "PublicRouteTable",
+                "GatewayAttachment"
+            ],
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "publicsubnet4"
+                },
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
+                }
+            }
         }
     },
     "Outputs": {
@@ -240,6 +286,12 @@
             "Value":{"Ref":"publicsubnet1"},
             "Export":{
             "Name":"csye6225-cloud-Networking-web-subnet"
+            }
+        },
+        "websubnet2":{
+            "Value":{"Ref":"publicsubnet4"},
+            "Export":{
+            "Name":"csye6225-cloud-Networking-web-subnet-2"
             }
         },
         "dbsubnet1Id":{

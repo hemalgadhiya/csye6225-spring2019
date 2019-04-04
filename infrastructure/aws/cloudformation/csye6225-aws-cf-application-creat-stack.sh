@@ -30,6 +30,12 @@ read fromaddr
 echo "Enter Account number for AWS"
 read accountno
 
+echo "Enter your Domain name"
+read domain_name
+
+echo "Enter ARN for your ssl certificate"
+read cert_arn
+
 getStackStatus() {
 	aws cloudformation describe-stacks \
 		--stack-name $Stack_Name \
@@ -75,14 +81,14 @@ exitWithErrorMessage() {
 
 dir_var=$(pwd)
 # echo "Current Directory is '$dir_var'"
-file_dir_var="file://$dir_var/application.json"
+file_dir_var="file://$dir_var/csye6225-cf-auto-scaling-application.json"
 
 #Create Stack
 
 aws cloudformation create-stack \
 	--stack-name $Stack_Name  \
 	--template-body $file_dir_var \
-	--parameters ParameterKey="keyname",ParameterValue=$KEY_CHOSEN ParameterKey="AmiId",ParameterValue=$amiId ParameterKey="NameTag",ParameterValue="ec2" ParameterKey="webappbucket",ParameterValue="$uploadbucket" ParameterKey="codedeploybucket",ParameterValue="$codedeploybucket" ParameterKey="fromaddress",ParameterValue="$fromaddr" ParameterKey="Accountno",ParameterValue="$accountno"\
+	--parameters ParameterKey="keyname",ParameterValue=$KEY_CHOSEN ParameterKey="AmiId",ParameterValue=$amiId ParameterKey="NameTag",ParameterValue="ec2" ParameterKey="webappbucket",ParameterValue="$uploadbucket" ParameterKey="codedeploybucket",ParameterValue="$codedeploybucket" ParameterKey="fromaddress",ParameterValue="$fromaddr" ParameterKey="Accountno",ParameterValue="$accountno" ParameterKey="DomainName",ParameterValue="$domain_name" ParameterKey="CertificateARN",ParameterValue="$cert_arn" \
 	--disable-rollback \
 	--capabilities CAPABILITY_NAMED_IAM
 
