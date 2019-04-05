@@ -473,55 +473,6 @@
               }]
           }
         },
-        "MethodStringSet":{
-            "Type":"AWS::WAFRegional::ByteMatchSet",
-            "Properties":{
-                "Name":"match-csrf-method",
-                "ByteMatchTuples":[
-                    {
-                        "FieldToMatch":{
-                            "Type":"METHOD"
-                        },
-                        "PositionalConstraint":"EXACTLY",
-                        "TargetString":"post",
-                        "TextTransformation":"LOWERCASE"
-                    }]
-            }
-        },
-        "CSRFTokenSizeConstraint":{
-            "Type":"AWS::WAFRegional::SizeConstraintSet",
-            "Properties":{
-                "Name":"match-csrf-token",
-                "SizeConstraints":[
-                    {
-                        "FieldToMatch":{
-                            "Type":"HEADER",
-                            "Data":"x-csrf-token"
-                        },
-                        "TextTransformation":"NONE",
-                        "ComparisonOperator":"EQ",
-                        "Size":36
-                    }]
-            }
-        },
-        "CSRFRule":{
-          "Type":"AWS::WAFRegional::Rule",
-          "Properties":{
-              "MetricName":"enforcecsrf",
-              "Name":"enforce-csrf",
-              "Predicates":[
-                  {
-                  "Type":"ByteMatch",
-                  "Negated" : false,
-                  "DataId":{"Ref":"MethodStringSet"}
-              },
-              {
-                  "Type":"SizeConstraint",
-                  "Negated" : true,
-                  "DataId":{"Ref":"CSRFTokenSizeConstraint"}
-              }]
-          }
-        },
         "ServerSideIncludeStringSet":{
             "Type":"AWS::WAFRegional::ByteMatchSet",
             "Properties":{
@@ -709,20 +660,13 @@
                             "Type":"BLOCK"
                         },
                         "Priority":80,
-                        "RuleId":{"Ref":"CSRFRule"}
-                    },
-                    {
-                        "Action":{
-                            "Type":"BLOCK"
-                        },
-                        "Priority":90,
                         "RuleId":{"Ref":"ServerSideIncludeRule"}
                     },
                     {
                         "Action":{
                             "Type":"BLOCK"
                         },
-                        "Priority":100,
+                        "Priority":90,
                         "RuleId":{"Ref":"AdminAccessRule"}
                     }
                   ]
