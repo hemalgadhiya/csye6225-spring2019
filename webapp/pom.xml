@@ -9,7 +9,6 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>webApp API</name>
 
-
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
@@ -37,8 +36,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
-
 
 	<dependencies>
 		<dependency>
@@ -82,27 +79,21 @@
 			<artifactId>aws-java-sdk</artifactId>
 			<version>1.11.106</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.timgroup</groupId>
 			<artifactId>java-statsd-client</artifactId>
 			<version>3.0.1</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>27.0.1-jre</version>
 		</dependency>
-
 	</dependencies>
-
 
 	<properties>
 		<java.version>1.8</java.version>
 	</properties>
-
-
 
 </project>
 

@@ -447,7 +447,7 @@
                         },
                         "TextTransformation":"NONE",
                         "ComparisonOperator":"GT",
-                        "Size":4096
+                        "Size":2097152
                     },
                     {
                         "FieldToMatch":{

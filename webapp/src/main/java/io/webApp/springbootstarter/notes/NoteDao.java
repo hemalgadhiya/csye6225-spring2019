@@ -8,39 +8,73 @@ import org.springframework.stereotype.Service;
 import io.webApp.springbootstarter.notes.Note;
 import io.webApp.springbootstarter.notes.NoteRepository;
 
+/**
+ * Note table class with helper functions
+ * 
+ * @author satishkumaranbalagan
+ *
+ */
 @Service
 public class NoteDao {
 
 	@Autowired
 	NoteRepository noterepo;
 
-	// TableCreation tableCreation;
-
-	// Save a Note
-
+	/**
+	 * Save a Note
+	 * 
+	 * @param nt Note object
+	 * @return the saved entity, should never be NULL
+	 */
 	public Note Save(Note nt) {
 		return noterepo.save(nt);
 	}
 
-	// get a all note
+	/**
+	 * get a all note
+	 * 
+	 * @return Notes in List
+	 */
 	public List<Note> findAll() {
 		return noterepo.findAll();
 	}
 
-	// get a note by ID
+	/**
+	 * get a note by ID
+	 * 
+	 * @param noteid in String
+	 * @return Note object
+	 */
 	public Optional<Note> noteById(String noteid) {
 		return noterepo.findById(noteid);
 	}
 
-	// delete a note by Id
+	/**
+	 * delete a note by Id
+	 * 
+	 * @param noteid in String
+	 */
 	public void deleteNote(String noteid) {
 		noterepo.deleteById(noteid);
 	}
 
+	/**
+	 * find list of notes under a email ID
+	 * 
+	 * @param emailID in String
+	 * @return notes in List
+	 */
 	public List<Note> findByemailID(String emailID) {
 		return noterepo.findByemailID(emailID);
 	}
 
+	/**
+	 * find a note under a emailID based on note ID
+	 * 
+	 * @param NoteID  in String
+	 * @param emailID in String
+	 * @return Note object on success, else NULL
+	 */
 	public Note findNoteUnderEmailList(String NoteID, String emailID) {
 		List<Note> NoteList = findByemailID(emailID);
 		for (Note i : NoteList) {
@@ -50,6 +84,13 @@ public class NoteDao {
 		return null;
 	}
 
+	/**
+	 * delete a note under a emailID based on note ID
+	 * 
+	 * @param NoteID  in String
+	 * @param emailID in String
+	 * @return true on success, else false
+	 */
 	public boolean DeleteNoteUnderEmailList(String NoteID, String emailID) {
 		List<Note> NoteList = findByemailID(emailID);
 		for (Note i : NoteList) {

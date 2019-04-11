@@ -33,8 +33,12 @@ read accountno
 echo "Enter your Domain name"
 read domain_name
 
-echo "Enter ARN for your ssl certificate"
+echo "Enter ARN for your first ssl certificate"
 read cert_arn
+
+echo "Enter ARN for your second ssl certificate"
+read cert_arn_2
+
 
 getStackStatus() {
 	aws cloudformation describe-stacks \
@@ -88,7 +92,7 @@ file_dir_var="file://$dir_var/csye6225-cf-auto-scaling-application.json"
 aws cloudformation create-stack \
 	--stack-name $Stack_Name  \
 	--template-body $file_dir_var \
-	--parameters ParameterKey="keyname",ParameterValue=$KEY_CHOSEN ParameterKey="AmiId",ParameterValue=$amiId ParameterKey="NameTag",ParameterValue="ec2" ParameterKey="webappbucket",ParameterValue="$uploadbucket" ParameterKey="codedeploybucket",ParameterValue="$codedeploybucket" ParameterKey="fromaddress",ParameterValue="$fromaddr" ParameterKey="Accountno",ParameterValue="$accountno" ParameterKey="DomainName",ParameterValue="$domain_name" ParameterKey="CertificateARN",ParameterValue="$cert_arn" \
+	--parameters ParameterKey="keyname",ParameterValue=$KEY_CHOSEN ParameterKey="AmiId",ParameterValue=$amiId ParameterKey="NameTag",ParameterValue="ec2" ParameterKey="webappbucket",ParameterValue="$uploadbucket" ParameterKey="codedeploybucket",ParameterValue="$codedeploybucket" ParameterKey="fromaddress",ParameterValue="$fromaddr" ParameterKey="Accountno",ParameterValue="$accountno" ParameterKey="DomainName",ParameterValue="$domain_name" ParameterKey="CertificateARN",ParameterValue="$cert_arn" ParameterKey="CertificateARN2",ParameterValue="$cert_arn_2" \
 	--disable-rollback \
 	--capabilities CAPABILITY_NAMED_IAM
 

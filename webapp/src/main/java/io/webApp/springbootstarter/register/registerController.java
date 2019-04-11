@@ -89,44 +89,57 @@ public class registerController {
 		return user;
 	}
 
-	@RequestMapping(method = RequestMethod.POST, value = "/user/register")
-	public String addUser(@RequestBody register userDetails) {
+	@RequestMapping(method = RequestMethod.GET, value = "/health", produces = "application/json")
+	public ResponseEntity<String> healthCheck() {
+		String reply = "{\"RESPONSE\" : \"Health check successsfull\"}";
+		return ResponseEntity.status(HttpStatus.OK).body(reply);
+	}
+
+	@RequestMapping(method = RequestMethod.POST, value = "/user/register", produces = "application/json")
+	public ResponseEntity<String> addUser(@RequestBody register userDetails) {
 		statsd.incrementCounter(userHTTPPOST);
 		logger.info("POST request : \"/user/register\"");
+		String reply;
 		if (userDetails.getEmail() == null || userDetails.getPassword() == null || userDetails.getEmail().isEmpty()
 				|| userDetails.getPassword().isEmpty()) {
 			logger.error("Credentials should not be empty");
-			return "{\"RESPONSE\" : \"Credentials should not be empty\"}";
+			reply = "{\"RESPONSE\" : \"Credentials should not be empty\"}";
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(reply);
 		}
 
 		if (checkVaildEmailAddr(userDetails.getEmail())) {
 			if (checkAlreadyPresent(userDetails)) {
 				logger.debug("User email already exists. Please Login");
-				return "{\"RESPONSE\" : \"User email already exists. Please Login\"}";
+				reply = "{\"RESPONSE\" : \"User email already exists. Please Login\"}";
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(reply);
 			}
 			if (!isValidPassword(userDetails.getPassword())) {
 				logger.error("/nPassword should follow NIST standards/n");
-				return "{\"RESPONSE\" : \"password should follow NIST standards\"}";
+				reply = "{\"RESPONSE\" : \"password should follow NIST standards\"}";
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(reply);
 			}
 			registerUser(userDetails);
-			return "{\"RESPONSE\" : \"Registeration Successful\"}";
+			reply = "{\"RESPONSE\" : \"Registration Successful\"}";
+			return ResponseEntity.status(HttpStatus.OK).body(reply);
 		} else {
 			logger.error("Invalid emailID. Check it out !!!");
-			return "{\"RESPONSE\" : \"Invalid emailID. Check it out !!!\"}";
+			reply = "{\"RESPONSE\" : \"Invalid emailID. Check it out !!!\"}";
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(reply);
 		}
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = "/", produces = "application/json")
-	public String ValidUser(@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
+	public ResponseEntity<String> ValidUser(
+			@RequestHeader(value = "Authorization", defaultValue = "noAuth") String auth) {
 		statsd.incrementCounter(userHTTPGET);
 		logger.info("GET request : \"/\"");
 		String status = checkAuth(auth);
 		if (status.equals("Success")) {
-			String time = "{\"RESPONSE\" : " + currentTime() + "\"}\"";
-			return time;
+			String time = "{\"RESPONSE\" : \"" + currentTime() + "\"}";
+			return ResponseEntity.status(HttpStatus.OK).body(time);
 		} else {
 			logger.error(status);
-			return status;
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(status);
 		}
 	}
 
@@ -461,15 +474,17 @@ public class registerController {
 		}
 	}
 
-	@RequestMapping(method = RequestMethod.POST, value = "/reset")
-	public String reserPassword(@RequestBody register userDetails) {
+	@RequestMapping(method = RequestMethod.POST, value = "/reset", produces = "application/json")
+	public ResponseEntity<String> reserPassword(@RequestBody register userDetails) {
 		statsd.incrementCounter(userHTTPPOST);
 
 		logger.info("POST request : \"/reset\"");
+		String reply;
 
 		if (userDetails.getEmail() == null) {
 			logger.error("Credentials should not be empty");
-			return "{\"RESPONSE\" : \"User email not provided\"}";
+			reply = "{\"RESPONSE\" : \"User email not provided\"}";
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(reply);
 		}
 
 		logger.debug("Reset password for Email id : " + userDetails.getEmail());
@@ -477,7 +492,8 @@ public class registerController {
 		if (checkVaildEmailAddr(userDetails.getEmail())) {
 			if (!checkAlreadyPresent(userDetails)) {
 				logger.debug("This user is not registered with us");
-				return "{\"RESPONSE\" : \"User not registered ! Please register\"}";
+				reply = "{\"RESPONSE\" : \"User not registered ! Please register\"}";
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(reply);
 			}
 		}
 
@@ -491,8 +507,8 @@ public class registerController {
 		PublishResult publishResult = snsClient.publish(publishRequest);
 		logger.info("SNS Publish Result: " + publishResult);
 
-		return "{\"RESPONSE\" : \"Password Reset Link was sent to your emailID\"}";
-
+		reply = "{\"RESPONSE\" : \"Password Reset Link was sent to your emailID\"}";
+		return ResponseEntity.status(HttpStatus.OK).body(reply);
 	}
 
 	public String checkAuth(String auth) {
@@ -534,12 +550,24 @@ public class registerController {
 		return "Success";
 	}
 
+	/**
+	 * checks the validity of email address and whether it follows NIST standards
+	 * 
+	 * @param email in String
+	 * @return true on success, else false
+	 */
 	public boolean checkVaildEmailAddr(String email) {
 		logger.info("Checking Email ID pattern");
 		Matcher mat = VALID_EMAIL_ADDRESS_REGEX.matcher(email);
 		return mat.find();
 	}
 
+	/**
+	 * checks if the user has already registered
+	 * 
+	 * @param userDetails in register object
+	 * @return true on success, else false
+	 */
 	public boolean checkAlreadyPresent(register userDetails) {
 		logger.info("Checking Email ID Already present");
 		ArrayList<register> dbList = new ArrayList<>(userRepository.findAll());
@@ -553,6 +581,13 @@ public class registerController {
 		return false;
 	}
 
+	/**
+	 * compares the given password is valid and matches with the user registered
+	 * password details
+	 * 
+	 * @param userDetails in register object
+	 * @return true on success, else false
+	 */
 	public boolean checkPassword(register userDetails) {
 		logger.info("Checking password");
 		ArrayList<register> dbList = new ArrayList<>(userRepository.findAll());
@@ -570,6 +605,12 @@ public class registerController {
 		return false;
 	}
 
+	/**
+	 * check if the given password is valid and follows NIST standards
+	 * 
+	 * @param password in String
+	 * @return true on success, else false
+	 */
 	public boolean isValidPassword(String password) {
 		if (!(password.matches("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"))) {
 			logger.error("Invalid password");
@@ -579,16 +620,25 @@ public class registerController {
 		return true;
 	}
 
+	/**
+	 * register and save the user details in DB/Table
+	 * 
+	 * @param userData register object
+	 * @return true on success
+	 */
 	public boolean registerUser(@RequestBody final register userData) {
-
 		String password = BCrypt.hashpw(userData.getPassword(), BCrypt.gensalt());
 		logger.debug("Password salt : " + password);
 		userData.setPassword(password);
-
 		userRepository.save(userData);
 		return true;
 	}
 
+	/**
+	 * Get the current time
+	 * 
+	 * @return date and formatted time in String
+	 */
 	public String currentTime() {
 		currentTime Ctime = new currentTime();
 		return Ctime.getCurrentTime();
